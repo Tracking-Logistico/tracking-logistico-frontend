@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Package2 } from "lucide-react";
+import { ArrowUpRight, Package2 } from "lucide-react";
 import { gsap } from "gsap";
 import { buttonVariants } from "./ui/button";
 import { cn } from "@/lib/utils"; 
@@ -63,19 +63,27 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background">
-      <div className="flex h-16 items-center justify-between px-4 md:px-6">
+      <div className="flex h-[4.5rem] items-center gap-6 px-4 md:px-6">
         <Link
           to="/"
           className="flex items-center gap-2"
           aria-label="LogisTrack - Ir a la página de inicio"
         >
-          <Package2 className="h-6 w-6 text-blue-600" aria-hidden="true" />
+          <Package2 className="h-6 w-6 text-emerald-500" aria-hidden="true" />
           <span className="font-bold text-xl">LogisTrack</span>
         </Link>
 
         <nav
-          className="hidden md:flex items-center gap-4"
+          className="hidden min-w-0 flex-1 items-center gap-1 overflow-x-auto whitespace-nowrap [scrollbar-width:none] md:flex [&::-webkit-scrollbar]:hidden"
           aria-label="Navegación principal"
+        >
+          <a href="/#como-funciona" className="rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">Cómo funciona</a>
+          <a href="/#para-quien" className="rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">Para quién</a>
+        </nav>
+
+        <nav
+          className="hidden items-center gap-2 md:flex"
+          aria-label="Acciones de cuenta"
         >
           <Link
             to="/login"
@@ -85,7 +93,7 @@ export function Navbar() {
           </Link>
 
           <Link to="/registro" className={cn(buttonVariants())}>
-            Registrarse
+            Registrarse <ArrowUpRight className="ml-1 h-4 w-4" />
           </Link>
         </nav>
 
@@ -117,12 +125,37 @@ export function Navbar() {
         id="mobile-menu"
         ref={menuRef}
         className={cn(
-          "md:hidden fixed inset-0 top-16 h-[calc(100vh-4rem)] w-full bg-background flex flex-col items-center justify-center gap-6",
+          "md:hidden fixed inset-0 top-[4.5rem] h-[calc(100vh-4.5rem)] w-full bg-background flex flex-col items-center justify-center gap-6",
           !isMenuOpen && "pointer-events-none"
         )}
         style={{ visibility: isMenuOpen ? "visible" : "hidden", opacity: 0 }}
         aria-label="Navegación móvil"
       >
+        <Link
+          to="/"
+          onClick={closeMenu}
+          className="mb-4 flex items-center gap-2 text-lg font-semibold"
+        >
+          <Package2 className="h-5 w-5 text-emerald-500" aria-hidden="true" />
+          LogisTrack
+        </Link>
+
+        <a
+          href="/#como-funciona"
+          onClick={closeMenu}
+          className="w-4/5 px-4 py-2 text-center text-lg text-muted-foreground"
+        >
+          Cómo funciona
+        </a>
+
+        <a
+          href="/#para-quien"
+          onClick={closeMenu}
+          className="w-4/5 px-4 py-2 text-center text-lg text-muted-foreground"
+        >
+          Para quién
+        </a>
+
         <Link
           to="/login"
           onClick={closeMenu}
@@ -136,7 +169,7 @@ export function Navbar() {
           onClick={closeMenu}
           className={cn(buttonVariants(), "text-lg w-4/5 justify-center")}
         >
-          Registrarse
+          Registrarse <ArrowUpRight className="ml-1 h-4 w-4" />
         </Link>
       </div>
     </header>
