@@ -62,8 +62,11 @@ export function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background">
-      <div className="flex h-[4.5rem] items-center gap-6 px-4 md:px-6">
+    <nav
+      aria-label="Navegación principal"
+      className="sticky top-0 z-50 w-full border-b bg-background"
+    >
+      <div className="flex h-18 items-center justify-between gap-6 px-4 md:px-6">
         <Link
           to="/"
           className="flex items-center gap-2"
@@ -73,16 +76,18 @@ export function Navbar() {
           <span className="font-bold text-xl">LogisTrack</span>
         </Link>
 
-        <nav
-          className="hidden min-w-0 flex-1 items-center gap-1 overflow-x-auto whitespace-nowrap [scrollbar-width:none] md:flex [&::-webkit-scrollbar]:hidden"
-          aria-label="Navegación principal"
+        <div
+          className="hidden min-w-0 flex-1 items-center gap-1 overflow-x-auto whitespace-nowrap scrollbar-none md:flex [&::-webkit-scrollbar]:hidden"
+          role="group"
+          aria-label="Enlaces de navegación"
         >
           <a href="/#como-funciona" className="rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">Cómo funciona</a>
           <a href="/#para-quien" className="rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">Para quién</a>
-        </nav>
+        </div>
 
-        <nav
+        <div
           className="hidden items-center gap-2 md:flex"
+          role="group"
           aria-label="Acciones de cuenta"
         >
           <Link
@@ -95,7 +100,7 @@ export function Navbar() {
           <Link to="/registro" className={cn(buttonVariants())}>
             Registrarse <ArrowUpRight className="ml-1 h-4 w-4" />
           </Link>
-        </nav>
+        </div>
 
         <button
           type="button"
@@ -120,12 +125,12 @@ export function Navbar() {
           </span>
         </button>
       </div>
-
+    
       <div
         id="mobile-menu"
         ref={menuRef}
         className={cn(
-          "md:hidden fixed inset-0 top-[4.5rem] h-[calc(100vh-4.5rem)] w-full bg-background flex flex-col items-center justify-center gap-6",
+          "md:hidden fixed inset-0 top-18 h-[calc(100vh-4.5rem)] w-full bg-background flex flex-col items-center justify-center gap-6",
           !isMenuOpen && "pointer-events-none"
         )}
         style={{ visibility: isMenuOpen ? "visible" : "hidden", opacity: 0 }}
@@ -172,6 +177,6 @@ export function Navbar() {
           Registrarse <ArrowUpRight className="ml-1 h-4 w-4" />
         </Link>
       </div>
-    </header>
+    </nav>
   );
 }
