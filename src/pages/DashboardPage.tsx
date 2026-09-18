@@ -1,12 +1,6 @@
 import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
-import {
-  ArrowRight,
-  ClipboardList,
-  Map,
-  PackageCheck,
-  Users,
-} from "lucide-react";
+import { ArrowRight, ClipboardList, Map, PackageCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
 import { usePageMeta } from "@/hooks/usePageMeta";
@@ -19,7 +13,7 @@ const cards = [
     story: "HU-03A",
     description: "Validación y prioridad",
     icon: ClipboardList,
-    roles: ["OPERADOR", "CLIENTE"],
+    roles: ["OPERADOR"],
   },
   {
     key: "envios",
@@ -27,7 +21,7 @@ const cards = [
     story: "HU-03B",
     description: "Etiquetas y seguimiento",
     icon: PackageCheck,
-    roles: ["OPERADOR", "CLIENTE", "CONDUCTOR"],
+    roles: ["OPERADOR"],
   },
   {
     key: "rutas",
@@ -36,14 +30,6 @@ const cards = [
     description: "Asignación operativa",
     icon: Map,
     roles: ["OPERADOR", "CONDUCTOR"],
-  },
-  {
-    key: "usuarios",
-    title: "Usuarios internos",
-    story: "HU-01B",
-    description: "Altas y gestión",
-    icon: Users,
-    roles: ["OPERADOR"],
   },
 ] satisfies Array<{
   key: string;
@@ -109,7 +95,7 @@ export function DashboardPage() {
           className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
         >
           {cards
-            .filter((card) => role && card.roles.includes(role))
+            .filter((card) => role && (card.roles as Role[]).includes(role))
             .map(({ key, title, story, description, icon: Icon }) => (
               <Link
                 key={key}

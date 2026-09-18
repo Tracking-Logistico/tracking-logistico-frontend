@@ -178,7 +178,7 @@ export function RegisterPage() {
                   Inicia sesión
                 </Link>
               </p>
-              <Button disabled={loading}>
+              <Button type="submit" disabled={loading}>
                 {loading ? "Creando cuenta..." : "Crear cuenta"}
                 <ArrowRight className="size-4" />
               </Button>

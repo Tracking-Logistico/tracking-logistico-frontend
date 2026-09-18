@@ -64,7 +64,7 @@ export function ForgotPasswordPage() {
               {error}
             </p>
           )}
-          <Button className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Enviando..." : "Enviar instrucciones"}
           </Button>
         </form>

@@ -9,7 +9,6 @@ import {
   Menu,
   PackageCheck,
   Settings,
-  Users,
   X,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
@@ -32,25 +31,19 @@ const navItems: Array<{
     label: "Pedidos",
     to: "/panel/pedidos",
     icon: ClipboardList,
-    roles: ["CLIENTE", "OPERADOR"],
+    roles: ["OPERADOR"],
   },
   {
     label: "Envíos",
     to: "/panel/envios",
     icon: PackageCheck,
-    roles: ["CLIENTE", "OPERADOR", "CONDUCTOR"],
+    roles: ["OPERADOR"],
   },
   {
     label: "Rutas",
     to: "/panel/rutas",
     icon: Map,
     roles: ["OPERADOR", "CONDUCTOR"],
-  },
-  {
-    label: "Usuarios internos",
-    to: "/panel/usuarios",
-    icon: Users,
-    roles: ["OPERADOR"],
   },
 ];
 

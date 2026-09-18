@@ -1,11 +1,5 @@
 import { Link, useParams } from "react-router-dom";
-import {
-  ArrowLeft,
-  ClipboardList,
-  Map,
-  PackageCheck,
-  Users,
-} from "lucide-react";
+import { ArrowLeft, ClipboardList, Map, PackageCheck } from "lucide-react";
 import { UnavailableModule } from "@/components/UnavailableModule";
 import { usePageMeta } from "@/hooks/usePageMeta";
 
@@ -30,13 +24,6 @@ const modules = {
     title: "Gestión y asignación de rutas",
     description:
       "La vista permitirá organizar recorridos, asignar conductores y consultar el estado de cada ruta.",
-  },
-  usuarios: {
-    icon: Users,
-    story: "HU-01B",
-    title: "Usuarios internos",
-    description:
-      "El operador podrá crear, editar y desactivar usuarios internos con los datos específicos de su rol.",
   },
 } as const;
 export function ModulePage() {

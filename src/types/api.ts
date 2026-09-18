@@ -45,6 +45,72 @@ export interface ApiErrorShape {
   details?: Record<string, string>;
 }
 
+export type ServiceType = "ESTANDAR" | "EXPRESS" | "PROGRAMADO";
+export type Priority = "BAJA" | "MEDIA" | "ALTA" | "URGENTE";
+export type OrderStatus =
+  | "RECIBIDO"
+  | "EN_VALIDACION"
+  | "VALIDADO"
+  | "RECHAZADO"
+  | "EN_TRANSITO";
+
+export interface ReceiveOrderPayload {
+  clienteId: number;
+  direccionOrigen: string;
+  direccionDestino: string;
+  descripcionPaquete: string;
+  pesoKg: number;
+  largoCm: number;
+  anchoCm: number;
+  altoCm: number;
+  tipoServicio: ServiceType;
+}
+
+export interface ValidateOrderPayload {
+  operadorId: number;
+  aprobar: boolean;
+  prioridadConfirmada?: Priority;
+  observaciones?: string;
+}
+
+export interface OrderResponse extends ReceiveOrderPayload {
+  id: number;
+  numeroPedido: string;
+  prioridadSugerida: Priority;
+  prioridadConfirmada?: Priority;
+  estado: OrderStatus;
+  observacionesValidacion?: string;
+  operadorValidadorId?: number;
+  fechaCreacion: string;
+  fechaValidacion?: string;
+  numeroTracking?: string;
+  fechaActivacionTracking?: string;
+  etiquetaImpresa: boolean;
+  fechaImpresionEtiqueta?: string;
+}
+
+export interface LabelResponse {
+  numeroPedido: string;
+  numeroTracking: string;
+  contenido: string;
+  fechaImpresion: string;
+}
+
+export interface RouteStop {
+  id: number;
+  pedidoId: number;
+  orden: number;
+  estado: "PENDIENTE" | "ENTREGADO" | "CANCELADA";
+  fechaAsignacion: string;
+}
+
+export interface RouteResponse {
+  id: number;
+  conductorId: number;
+  fecha: string;
+  paradas: RouteStop[];
+}
+
 export interface OperationalModule {
   key: "orders" | "shipments" | "routes" | "users";
   title: string;

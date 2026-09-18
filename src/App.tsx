@@ -8,8 +8,10 @@ import { RegisterPage } from "./pages/RegisterPage";
 import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { VerifyPage } from "./pages/VerifyPage";
 import { DashboardPage } from "./pages/DashboardPage";
-import { ModulePage } from "./pages/ModulePage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { OrdersPage } from "./pages/OrdersPage";
+import { ShipmentsPage } from "./pages/ShipmentsPage";
+import { RoutesPage } from "./pages/RoutesPage";
 
 export default function App() {
   return (
@@ -26,23 +28,16 @@ export default function App() {
           <Route element={<AppShell />}>
             <Route path="/panel" element={<DashboardPage />} />
             <Route path="/panel/configuracion" element={<SettingsPage />} />
-            <Route element={<ProtectedRoute roles={["CLIENTE", "OPERADOR"]} />}>
-              <Route path="/panel/pedidos" element={<ModulePage />} />
+            <Route element={<ProtectedRoute roles={["OPERADOR"]} />}>
+              <Route path="/panel/pedidos" element={<OrdersPage />} />
             </Route>
-            <Route
-              element={
-                <ProtectedRoute roles={["CLIENTE", "OPERADOR", "CONDUCTOR"]} />
-              }
-            >
-              <Route path="/panel/envios" element={<ModulePage />} />
+            <Route element={<ProtectedRoute roles={["OPERADOR"]} />}>
+              <Route path="/panel/envios" element={<ShipmentsPage />} />
             </Route>
             <Route
               element={<ProtectedRoute roles={["OPERADOR", "CONDUCTOR"]} />}
             >
-              <Route path="/panel/rutas" element={<ModulePage />} />
-            </Route>
-            <Route element={<ProtectedRoute roles={["OPERADOR"]} />}>
-              <Route path="/panel/usuarios" element={<ModulePage />} />
+              <Route path="/panel/rutas" element={<RoutesPage />} />
             </Route>
           </Route>
         </Route>

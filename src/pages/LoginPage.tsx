@@ -132,7 +132,11 @@ export function LoginPage() {
                 {error}
               </p>
             )}
-            <Button className="h-11 w-full gap-2" disabled={loading}>
+            <Button
+              type="submit"
+              className="h-11 w-full gap-2"
+              disabled={loading}
+            >
               {loading ? "Validando..." : "Entrar al panel"}
               <ArrowRight className="size-4" />
             </Button>
