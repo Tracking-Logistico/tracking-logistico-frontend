@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { CheckCircle2, CircleAlert, LoaderCircle } from "lucide-react";
 import { api, getApiError } from "@/lib/api";
@@ -14,8 +14,10 @@ export function VerifyPage() {
   const [message, setMessage] = useState(
     token ? "" : "El enlace de verificación no contiene un token válido.",
   );
+  const verifiedTokenRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!token) return;
+    if (!token || verifiedTokenRef.current === token) return;
+    verifiedTokenRef.current = token;
     api
       .verifyClient(token)
       .then((response) => {

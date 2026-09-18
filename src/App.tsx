@@ -7,6 +7,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { VerifyPage } from "./pages/VerifyPage";
+import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { OrdersPage } from "./pages/OrdersPage";
@@ -23,6 +24,10 @@ export default function App() {
           <Route path="/registro" element={<RegisterPage />} />
           <Route path="/recuperar-password" element={<ForgotPasswordPage />} />
           <Route path="/verificar" element={<VerifyPage />} />
+          <Route
+            path="/restablecer-password/:token"
+            element={<ResetPasswordPage />}
+          />
         </Route>
         <Route element={<ProtectedRoute />}>
           <Route element={<AppShell />}>

@@ -1,5 +1,4 @@
-import { useEffect, useRef } from "react";
-import { gsap } from "gsap";
+import { useRef } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   Boxes,
@@ -53,15 +52,6 @@ export function AppShell() {
   const { role, signOut } = useAuthStore();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (mobileOpen)
-      gsap.fromTo(
-        sidebarRef.current,
-        { x: -24, autoAlpha: 0 },
-        { x: 0, autoAlpha: 1, duration: 0.25 },
-      );
-  }, [mobileOpen]);
-
   const closeMenu = () => setMobileOpen(false);
   const handleSignOut = async () => {
     await signOut();
@@ -72,7 +62,7 @@ export function AppShell() {
     <div className="min-h-screen bg-[#f4f7f5] text-slate-950">
       <button
         type="button"
-        className="fixed left-4 top-4 z-50 rounded-lg bg-slate-950 p-2 text-white shadow-lg md:hidden"
+        className="fixed right-4 top-4 z-50 rounded-lg bg-slate-950 p-2 text-white shadow-lg md:hidden"
         onClick={() => setMobileOpen(!mobileOpen)}
         aria-label={mobileOpen ? "Cerrar navegación" : "Abrir navegación"}
         aria-expanded={mobileOpen}
@@ -89,7 +79,7 @@ export function AppShell() {
       )}
       <aside
         ref={sidebarRef}
-        className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col bg-slate-950 px-5 py-6 text-white md:translate-x-0 md:opacity-100 ${mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
+        className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col bg-slate-950 px-5 py-6 text-white transition-transform duration-300 ease-out md:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
         <div className="flex items-center gap-3 px-2">
           <span className="grid size-9 place-items-center rounded-lg bg-emerald-400 text-slate-950">
