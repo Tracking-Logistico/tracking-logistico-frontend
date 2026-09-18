@@ -1,10 +1,5 @@
-import {
-  ArrowRight,
-  Clock3,
-  PackageCheck,
-  ShieldCheck,
-} from "lucide-react";
-import { buttonVariants } from "@/components/ui/button";
+import { ArrowRight, Clock3, PackageCheck, ShieldCheck } from "lucide-react";
+import { buttonVariants } from "@/components/ui/buttonVariants";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 

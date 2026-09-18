@@ -2,8 +2,8 @@ import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowUpRight, Package2 } from "lucide-react";
 import { gsap } from "gsap";
-import { buttonVariants } from "./ui/button";
-import { cn } from "@/lib/utils"; 
+import { buttonVariants } from "./ui/buttonVariants";
+import { cn } from "@/lib/utils";
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -32,7 +32,7 @@ export function Navbar() {
       gsap.fromTo(
         menuRef.current,
         { autoAlpha: 0, y: -20 },
-        { autoAlpha: 1, y: 0, duration: 0.35, ease: "power2.out" }
+        { autoAlpha: 1, y: 0, duration: 0.35, ease: "power2.out" },
       );
     } else {
       gsap.to(line1Ref.current, {
@@ -81,8 +81,18 @@ export function Navbar() {
           role="group"
           aria-label="Enlaces de navegación"
         >
-          <a href="/#como-funciona" className="rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">Cómo funciona</a>
-          <a href="/#para-quien" className="rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">Para quién</a>
+          <a
+            href="/#como-funciona"
+            className="rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            Cómo funciona
+          </a>
+          <a
+            href="/#para-quien"
+            className="rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            Para quién
+          </a>
         </div>
 
         <div
@@ -125,13 +135,13 @@ export function Navbar() {
           </span>
         </button>
       </div>
-    
+
       <div
         id="mobile-menu"
         ref={menuRef}
         className={cn(
           "md:hidden fixed inset-0 top-18 h-[calc(100vh-4.5rem)] w-full bg-background flex flex-col items-center justify-center gap-6",
-          !isMenuOpen && "pointer-events-none"
+          !isMenuOpen && "pointer-events-none",
         )}
         style={{ visibility: isMenuOpen ? "visible" : "hidden", opacity: 0 }}
         aria-label="Navegación móvil"
@@ -164,7 +174,10 @@ export function Navbar() {
         <Link
           to="/login"
           onClick={closeMenu}
-          className={cn(buttonVariants({ variant: "ghost" }), "text-lg w-4/5 justify-center")}
+          className={cn(
+            buttonVariants({ variant: "ghost" }),
+            "text-lg w-4/5 justify-center",
+          )}
         >
           Iniciar Sesión
         </Link>
