@@ -11,7 +11,8 @@ import type {
 } from "@/types/api";
 
 const API_URL = (
-  import.meta.env.VITE_API_URL ?? "http://localhost:8080/api/v1"
+  import.meta.env.VITE_API_URL ??
+  "https://tracking-logistico-backend.onrender.com/api/v1"
 ).replace(/\/$/, "");
 
 async function parseResponse<T>(response: Response): Promise<T> {
