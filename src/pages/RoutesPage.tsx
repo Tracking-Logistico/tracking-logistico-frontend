@@ -1,314 +1,179 @@
-/* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
-import { useEffect, useState } from "react";
-import type { FormEvent } from "react";
-import {
-  ArrowDown,
-  ArrowUp,
-  LoaderCircle,
-  Map,
-  RefreshCw,
-  Send,
-} from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { ArrowDown, ArrowUp, Bell, ClipboardList, MapPinned, RefreshCw, Route as RouteIcon, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { FormField } from "@/components/FormField";
 import { api, getApiError } from "@/lib/api";
 import { useAuthStore } from "@/stores/authStore";
 import { usePageMeta } from "@/hooks/usePageMeta";
-import type { OrderResponse, RouteResponse } from "@/types/api";
+import type { AssignmentEvent, DriverResponse, OrderResponse, RouteNotification, RouteResponse } from "@/types/api";
+
+function formatDate(date: string) { return new Date(date).toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" }); }
+function ratio(value: number, limit: number) { return Math.min(100, Math.round((value / (limit || 1)) * 100)); }
 
 export function RoutesPage() {
-  usePageMeta("Rutas", "Asigna y organiza las rutas de entrega.");
-  const token = useAuthStore((state) => state.accessToken);
-  const role = useAuthStore((state) => state.role);
+  usePageMeta("Rutas", "Organización y asignación de entregas");
+  const token = useAuthStore(s => s.accessToken);
+  const role = useAuthStore(s => s.role);
   const [pending, setPending] = useState<OrderResponse[]>([]);
+  const [drivers, setDrivers] = useState<DriverResponse[]>([]);
+  const [selectedDriver, setSelectedDriver] = useState<number | "">("");
+  const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
   const [route, setRoute] = useState<RouteResponse | null>(null);
-  const [conductorId, setConductorId] = useState("");
-  const [newConductorId, setNewConductorId] = useState("");
-  const [selectedOrder, setSelectedOrder] = useState<number | null>(null);
-  const [loading, setLoading] = useState(role === "OPERADOR");
-  const [saving, setSaving] = useState(false);
+  const [notifications, setNotifications] = useState<RouteNotification[]>([]);
+  const [history, setHistory] = useState<AssignmentEvent[]>([]);
+  const [historyOrder, setHistoryOrder] = useState<number | null>(null);
+  const [reassignId, setReassignId] = useState<number | null>(null);
+  const [reassignDriver, setReassignDriver] = useState<number | "">("");
+  const [reason, setReason] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const loadPending = async () => {
+  const [message, setMessage] = useState("");
+
+  const refresh = useCallback(async () => {
     if (!token) return;
-    if (role !== "OPERADOR") return;
     setLoading(true);
-    try {
-      setPending(await api.listPendingRouteOrders(token));
-    } catch (err) {
-      setError(
-        getApiError(
-          err,
-          "No se pudieron cargar los envíos pendientes de ruta.",
-        ),
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-  useEffect(() => {
-    void loadPending();
-  }, [token]);
-  async function loadRoute(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!token || !conductorId) return;
     setError("");
     try {
-      setRoute(await api.getDriverRoute(Number(conductorId), token));
-    } catch (err) {
-      setError(
-        getApiError(err, "No existe una ruta activa para ese conductor."),
-      );
-      setRoute(null);
-    }
+      if (role === "OPERADOR") {
+        const [orders, activeDrivers] = await Promise.all([api.listPendingRouteOrders(token), api.listDrivers(token)]);
+        setPending(orders);
+        setDrivers(activeDrivers);
+        setSelectedOrders(old => old.filter(id => orders.some(order => order.id === id)));
+        if (selectedDriver) {
+          try { setRoute(await api.getDriverRoute(Number(selectedDriver), token)); }
+          catch { setRoute(null); }
+        }
+      } else if (role === "CONDUCTOR") {
+        const alerts = await api.routeNotifications(token);
+        setNotifications(alerts);
+        try { setRoute(await api.myDriverRoute(token)); }
+        catch (e) {
+          if (typeof e === "object" && e !== null && "status" in e && e.status === 404) setRoute(null);
+          else throw e;
+        }
+      }
+    } catch (e) { setError(getApiError(e)); }
+    finally { setLoading(false); }
+  }, [token, role, selectedDriver]);
+
+  useEffect(() => { void refresh(); }, [refresh]);
+
+  const currentDriver = drivers.find(d => d.usuarioId === selectedDriver);
+  const selectedWeight = pending.filter(p => selectedOrders.includes(p.id)).reduce((total,p) => total + p.pesoKg, 0);
+  const selectedVolume = pending.filter(p => selectedOrders.includes(p.id)).reduce((total,p) => total + p.largoCm * p.anchoCm * p.altoCm, 0);
+  const beyondCapacity = Boolean(currentDriver && (
+    currentDriver.entregasAsignadas + selectedOrders.length > currentDriver.maxEntregasDia ||
+    currentDriver.pesoAsignadoKg + selectedWeight > currentDriver.capacidadMaxKg ||
+    currentDriver.volumenAsignadoCm3 + selectedVolume > currentDriver.capacidadMaxVolumenCm3
+  ));
+
+  async function execute(operation: () => Promise<void>) {
+    setBusy(true); setError(""); setMessage("");
+    try { await operation(); } catch (e) { setError(getApiError(e)); }
+    finally { setBusy(false); }
   }
+
+  async function changeDriver(id: number | "") {
+    setSelectedDriver(id); setRoute(null); setReassignId(null); setHistoryOrder(null);
+    if (!token || !id) return;
+    try { setRoute(await api.getDriverRoute(id, token)); }
+    catch (e) { if (!(typeof e === "object" && e !== null && "status" in e && e.status === 404)) setError(getApiError(e)); }
+  }
+
   async function assign() {
-    if (!token || !selectedOrder || !conductorId) {
-      setError("Selecciona un envío e indica el conductor.");
-      return;
-    }
-    setSaving(true);
-    setError("");
-    try {
-      const updated = await api.assignRouteOrder(
-        selectedOrder,
-        Number(conductorId),
-        token,
-      );
-      setRoute(updated);
-      setPending((current) =>
-        current.filter((order) => order.id !== selectedOrder),
-      );
-      setSelectedOrder(null);
-      setSuccess(
-        `Envío asignado a la ruta del conductor ${updated.conductorId}.`,
-      );
-    } catch (err) {
-      setError(getApiError(err, "No se pudo asignar el envío."));
-    } finally {
-      setSaving(false);
-    }
+    if (!token || !selectedDriver || !selectedOrders.length || busy || beyondCapacity) return;
+    await execute(async () => {
+      await api.assignRouteOrders(selectedOrders, Number(selectedDriver), token);
+      setSelectedOrders([]);
+      setMessage("Asignación registrada; el conductor recibió un aviso en su panel.");
+      await refresh();
+    });
   }
-  async function reorder(stopId: number, direction: "up" | "down") {
-    if (!token || !route) return;
-    const index = route.paradas.findIndex((stop) => stop.id === stopId);
-    const target = direction === "up" ? index - 1 : index + 1;
-    if (index < 0 || target < 0 || target >= route.paradas.length) return;
-    const ids = route.paradas.map((stop) => stop.pedidoId);
-    [ids[index], ids[target]] = [ids[target], ids[index]];
-    try {
+
+  async function reorder(stopId: number, direction: -1 | 1) {
+    if (!token || !route || busy) return;
+    const i = route.paradas.findIndex(p => p.id === stopId);
+    const j = i + direction;
+    if (i < 0 || j < 0 || j >= route.paradas.length) return;
+    const ids = route.paradas.map(p => p.pedidoId);
+    [ids[i], ids[j]] = [ids[j], ids[i]];
+    await execute(async () => {
       setRoute(await api.reorderRoute(route.id, ids, token));
-    } catch (err) {
-      setError(getApiError(err, "No se pudo reordenar la ruta."));
-    }
+      setMessage("Orden personalizado guardado.");
+    });
   }
 
   async function reassign(pedidoId: number) {
-    if (!token || !newConductorId) {
-      setError("Indica el nuevo conductor para reasignar la parada.");
-      return;
-    }
-    try {
-      setRoute(
-        await api.reassignRouteOrder(pedidoId, Number(newConductorId), token),
-      );
-      setSuccess(
-        `Pedido ${pedidoId} reasignado al conductor ${newConductorId}.`,
-      );
-    } catch (err) {
-      setError(getApiError(err, "No se pudo reasignar el envío."));
-    }
+    if (!token || !reassignDriver || busy) return;
+    await execute(async () => {
+      await api.reassignRouteOrder(pedidoId, Number(reassignDriver), reason.trim(), token);
+      setReassignId(null); setReassignDriver(""); setReason("");
+      setMessage("Envío reasignado y notificado al nuevo conductor. Se conservó la trazabilidad.");
+      await refresh();
+    });
   }
-  return (
-    <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8 lg:px-10">
-      <header className="flex flex-col gap-5 border-b border-slate-200 pb-8 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-emerald-700">
-            HU-09
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-            Gestión y asignación de rutas
-          </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-            Asigna envíos en tránsito a la ruta diaria de un conductor y
-            organiza el orden de sus paradas.
-          </p>
+
+  async function showHistory(pedidoId: number) {
+    if (!token) return;
+    setHistoryOrder(pedidoId);
+    setHistory([]);
+    try { setHistory(await api.routeAssignmentHistory(pedidoId, token)); }
+    catch (e) { setError(getApiError(e)); }
+  }
+
+  async function readNotification(id: number) {
+    if (!token) return;
+    await execute(async () => {
+      await api.readRouteNotification(id, token);
+      setNotifications(old => old.map(n => n.id === id ? { ...n, leida: true } : n));
+    });
+  }
+
+  return <div className="mx-auto max-w-7xl px-5 py-9 sm:px-8 lg:px-10">
+    <header className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-7">
+      <div><p className="text-xs font-semibold uppercase tracking-[.19em] text-emerald-700">Operación logística</p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight">{role === "CONDUCTOR" ? "Mis entregas de hoy" : "Planificación de rutas"}</h1>
+        <p className="mt-2 text-sm text-slate-600">{role === "CONDUCTOR" ? "Consulta tus entregas, su orden y las novedades de asignación." : "Selecciona envíos, comprueba la capacidad del conductor y organiza la jornada."}</p></div>
+      <Button variant="outline" disabled={loading || busy} onClick={() => void refresh()}><RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`}/> Actualizar</Button>
+    </header>
+    {error && <div role="alert" className="mt-5 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">{error}</div>}
+    {message && <div role="status" className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">{message}</div>}
+
+    {role === "CONDUCTOR" && <section className="mt-7 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="mb-4 flex items-center gap-2"><Bell className="size-5 text-emerald-700"/><h2 className="font-semibold">Novedades de mi ruta</h2><span className="ml-auto rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800">{notifications.filter(n => !n.leida).length} sin leer</span></div>
+      {!notifications.length ? <p className="text-sm text-slate-500">No tienes notificaciones recientes.</p> : <div className="grid gap-2 sm:grid-cols-2">{notifications.map(n => <div key={n.id} className={`rounded-xl border p-3 text-sm ${n.leida ? "border-slate-100 bg-slate-50" : "border-emerald-200 bg-emerald-50"}`}><p className="font-medium">{n.mensaje}</p><p className="mt-1 text-xs text-slate-500">Pedido #{n.pedidoId} · {formatDate(n.fecha)}</p>{!n.leida && <Button size="sm" variant="outline" className="mt-2" disabled={busy} onClick={() => void readNotification(n.id)}>Marcar como leída</Button>}</div>)}</div>}
+    </section>}
+
+    <div className={`mt-7 grid gap-7 ${role === "OPERADOR" ? "lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]" : ""}`}>
+      {role === "OPERADOR" && <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex items-center justify-between"><div className="flex items-center gap-2"><ClipboardList className="size-5 text-emerald-700"/><h2 className="font-semibold">Pendientes de asignación</h2></div><span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold">{pending.length}</span></div>
+        <p className="mt-2 text-sm text-slate-500">Selecciona uno o varios envíos. La operación será completa o no se realizará.</p>
+        <div className="mt-5 max-h-[630px] space-y-2 overflow-y-auto pr-1">{loading && <p className="text-sm text-slate-500">Consultando envíos...</p>}
+          {!loading && !pending.length && <p className="rounded-xl border border-dashed p-5 text-sm text-slate-500">No hay envíos por asignar.</p>}
+          {pending.map(p => <label key={p.id} className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition ${selectedOrders.includes(p.id) ? "border-emerald-500 bg-emerald-50" : "border-slate-200 hover:border-slate-300"}`}>
+            <input type="checkbox" className="mt-1 accent-emerald-700" checked={selectedOrders.includes(p.id)} onChange={e => setSelectedOrders(ids => e.target.checked ? [...ids, p.id] : ids.filter(id => id !== p.id))}/>
+            <span className="min-w-0 flex-1"><span className="flex flex-wrap items-center gap-2"><span className="font-mono text-sm font-semibold">{p.numeroTracking || p.numeroPedido}</span><span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">{p.prioridadConfirmada || p.prioridadSugerida}</span></span><span className="mt-1 block text-sm text-slate-700">{p.direccionDestino} · {p.ciudadDestino}</span><span className="mt-1 block text-xs text-slate-500">{p.destinatarioNombre || "Destinatario no indicado"} · {p.pesoKg} kg · {p.estado.replaceAll("_", " ")}</span></span>
+          </label>)}</div>
+        <div className="mt-5 border-t border-slate-100 pt-5"><label htmlFor="conductor-ruta" className="text-sm font-medium">Conductor disponible</label><select id="conductor-ruta" value={selectedDriver} onChange={e => void changeDriver(e.target.value ? Number(e.target.value) : "")} className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm"><option value="">Seleccionar conductor</option>{drivers.map(d => <option key={d.usuarioId} value={d.usuarioId}>{d.nombre} · {d.entregasAsignadas}/{d.maxEntregasDia} entregas</option>)}</select>
+          {currentDriver && <div className="mt-4 space-y-3 rounded-xl bg-slate-50 p-4 text-xs"><p className="font-semibold text-slate-800">Capacidad de la jornada (incluye lo seleccionado)</p>
+            {([ ["Entregas", currentDriver.entregasAsignadas + selectedOrders.length, currentDriver.maxEntregasDia, ""], ["Peso", currentDriver.pesoAsignadoKg + selectedWeight, currentDriver.capacidadMaxKg, "kg"], ["Volumen", currentDriver.volumenAsignadoCm3 + selectedVolume, currentDriver.capacidadMaxVolumenCm3, "cm³"] ] as Array<[string,number,number,string]>).map(([name,amount,limit,unit]) => <div key={name}><div className="flex justify-between gap-2"><span>{name}</span><span className={amount > limit ? "font-semibold text-rose-600" : "text-slate-700"}>{Math.round(amount * 100) / 100} / {limit} {unit}</span></div><div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-200"><div className={`h-full rounded-full ${amount > limit ? "bg-rose-500" : "bg-emerald-600"}`} style={{ width: `${ratio(amount, limit)}%` }}/></div></div>)}</div>}
+          {beyondCapacity && <p role="alert" className="mt-3 text-sm text-rose-700">La selección supera la capacidad disponible. El servidor también validará el límite.</p>}
+          <Button className="mt-4 w-full" disabled={!selectedDriver || selectedOrders.length === 0 || busy || beyondCapacity} onClick={() => void assign()}><Send className="size-4"/>Asignar {selectedOrders.length || ""} {selectedOrders.length === 1 ? "envío" : "envíos"}</Button>
         </div>
-        {role === "OPERADOR" && (
-          <Button
-            variant="outline"
-            onClick={() => void loadPending()}
-            disabled={loading}
-          >
-            <RefreshCw className="size-4" />
-            Actualizar
-          </Button>
-        )}
-      </header>
-      {(error || success) && (
-        <p
-          role={error ? "alert" : "status"}
-          className={`mt-6 rounded-lg px-4 py-3 text-sm ${error ? "bg-rose-50 text-rose-700" : "bg-emerald-50 text-emerald-700"}`}
-        >
-          {error || success}
-        </p>
-      )}
-      <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_1.1fr]">
-        <section>
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                Bandeja logística
-              </p>
-              <h2 className="mt-1 text-xl font-semibold">Envíos sin asignar</h2>
-            </div>
-            <Map className="size-5 text-emerald-700" />
-          </div>
-          <p className="mt-2 text-sm text-slate-500">
-            Solo aparecen envíos que ya tienen tracking activo.
-          </p>
-          <div className="mt-4 space-y-3">
-            {loading && (
-              <div className="flex items-center gap-2 text-sm text-slate-500">
-                <LoaderCircle className="size-4 animate-spin" />
-                Cargando...
-              </div>
-            )}
-            {!loading && pending.length === 0 && (
-              <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
-                No hay envíos pendientes de asignación.
-              </div>
-            )}
-            {pending.map((order) => (
-              <button
-                type="button"
-                key={order.id}
-                onClick={() => setSelectedOrder(order.id)}
-                className={`w-full rounded-xl border bg-white p-5 text-left shadow-sm transition ${selectedOrder === order.id ? "border-emerald-500 ring-4 ring-emerald-500/10" : "border-slate-200 hover:border-emerald-300"}`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-mono text-sm font-semibold">
-                      {order.numeroTracking}
-                    </p>
-                    <p className="mt-1 text-sm text-slate-600">
-                      {order.direccionDestino}
-                    </p>
-                  </div>
-                  <span className="text-xs text-slate-500">
-                    {order.numeroPedido}
-                  </span>
-                </div>
-              </button>
-            ))}
-          </div>
-        </section>
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="font-semibold">Ruta del día</h2>
-          <p className="mt-1 text-sm text-slate-500">
-            Consulta o abre la ruta activa de un conductor.
-          </p>
-          <form className="mt-5 flex gap-3" onSubmit={loadRoute}>
-            <FormField
-              label="ID usuario del conductor"
-              name="conductorId"
-              type="number"
-              min="1"
-              required
-              value={conductorId}
-              onChange={(e) => setConductorId(e.target.value)}
-            />
-            <Button type="submit" className="mt-7" variant="outline">
-              Consultar
-            </Button>
-          </form>
-          <Button
-            className="mt-4 w-full"
-            onClick={() => void assign()}
-            disabled={saving || role !== "OPERADOR"}
-          >
-            <Send className="size-4" />
-            {saving ? "Asignando..." : "Asignar envío seleccionado"}
-          </Button>
-          {role === "OPERADOR" && (
-            <div className="mt-4">
-              <FormField
-                label="Nuevo conductor para reasignar"
-                name="newConductorId"
-                type="number"
-                min="1"
-                value={newConductorId}
-                onChange={(e) => setNewConductorId(e.target.value)}
-              />
-            </div>
-          )}
-          {route && (
-            <div className="mt-7 border-t border-slate-100 pt-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.14em] text-slate-400">
-                    Ruta #{route.id}
-                  </p>
-                  <p className="mt-1 text-sm font-medium">
-                    {route.fecha} · conductor {route.conductorId}
-                  </p>
-                </div>
-                <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800">
-                  {route.paradas.length} paradas
-                </span>
-              </div>
-              <ol className="mt-4 space-y-2">
-                {route.paradas.map((stop, index) => (
-                  <li
-                    key={stop.id}
-                    className="flex items-center gap-3 rounded-lg bg-slate-50 p-3"
-                  >
-                    <span className="grid size-7 place-items-center rounded-full bg-slate-950 text-xs font-semibold text-white">
-                      {stop.orden}
-                    </span>
-                    <span className="flex-1 text-sm">
-                      Pedido #{stop.pedidoId}
-                      <br />
-                      <span className="text-xs text-slate-500">
-                        {stop.estado}
-                      </span>
-                    </span>
-                    {role === "OPERADOR" && (
-                      <div className="flex gap-1">
-                        <Button
-                          size="icon-xs"
-                          variant="ghost"
-                          aria-label="Subir parada"
-                          disabled={index === 0}
-                          onClick={() => void reorder(stop.id, "up")}
-                        >
-                          <ArrowUp className="size-4" />
-                        </Button>
-                        <Button
-                          size="icon-xs"
-                          variant="ghost"
-                          aria-label="Bajar parada"
-                          disabled={index === route.paradas.length - 1}
-                          onClick={() => void reorder(stop.id, "down")}
-                        >
-                          <ArrowDown className="size-4" />
-                        </Button>
-                        <Button
-                          size="xs"
-                          variant="outline"
-                          onClick={() => void reassign(stop.pedidoId)}
-                        >
-                          Reasignar
-                        </Button>
-                      </div>
-                    )}
-                  </li>
-                ))}
-              </ol>
-            </div>
-          )}
-        </section>
-      </div>
+      </section>}
+
+      <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex items-center gap-2"><MapPinned className="size-5 text-emerald-700"/><h2 className="font-semibold">{role === "CONDUCTOR" ? "Ruta asignada" : "Ruta del conductor"}</h2></div>
+        {route ? <><div className="mt-4 rounded-xl bg-slate-950 px-4 py-3 text-sm text-white"><div className="flex justify-between"><span>{new Date(route.fecha + "T12:00:00").toLocaleDateString("es-CO", { dateStyle: "long" })}</span><span>{route.paradas.length} entregas</span></div></div>
+          <ol className="mt-5 space-y-3">{route.paradas.map((stop,i) => <li key={stop.id} className="rounded-xl border border-slate-200 p-4"><div className="flex items-start gap-3"><span className="grid size-9 shrink-0 place-items-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-800">{stop.orden}</span><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><strong className="font-mono text-sm">{stop.numeroTracking || stop.numeroPedido || `Pedido #${stop.pedidoId}`}</strong>{stop.prioridad && <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${stop.prioridad === "ALTA" ? "bg-orange-100 text-orange-800" : "bg-slate-100 text-slate-700"}`}>{stop.prioridad}</span>}</div><p className="mt-1 text-sm font-medium text-slate-800">{stop.direccionDestino || "Dirección pendiente"}</p><p className="text-sm text-slate-500">{stop.ciudadDestino || ""}</p><p className="mt-2 text-xs text-slate-600">{stop.destinatarioNombre || "Destinatario"} · {stop.destinatarioTelefono || "Sin teléfono"} · {stop.pesoKg ?? "—"} kg</p></div>
+          {role === "OPERADOR" && <div className="flex flex-col gap-1"><Button size="icon-xs" variant="ghost" aria-label="Subir parada" disabled={i === 0 || busy} onClick={() => void reorder(stop.id,-1)}><ArrowUp className="size-4"/></Button><Button size="icon-xs" variant="ghost" aria-label="Bajar parada" disabled={i === route.paradas.length-1 || busy} onClick={() => void reorder(stop.id,1)}><ArrowDown className="size-4"/></Button></div>}</div>
+          {role === "OPERADOR" && <div className="mt-3 flex flex-wrap gap-2 border-t border-slate-100 pt-3"><Button size="sm" variant="outline" onClick={() => { setReassignId(stop.pedidoId); setReassignDriver(""); setHistoryOrder(null); }}>Reasignar</Button><Button size="sm" variant="ghost" onClick={() => void showHistory(stop.pedidoId)}>Ver historial</Button></div>}
+          {role === "OPERADOR" && reassignId === stop.pedidoId && <div className="mt-3 space-y-2 rounded-xl bg-slate-50 p-3"><label className="text-xs font-medium" htmlFor={`nuevo-${stop.id}`}>Nuevo conductor</label><select id={`nuevo-${stop.id}`} className="h-10 w-full rounded-lg border border-slate-200 px-2 text-sm" value={reassignDriver} onChange={e => setReassignDriver(e.target.value ? Number(e.target.value) : "")}><option value="">Selecciona un conductor</option>{drivers.filter(d => d.usuarioId !== route.conductorId).map(d => <option key={d.usuarioId} value={d.usuarioId}>{d.nombre} · {d.entregasAsignadas}/{d.maxEntregasDia}</option>)}</select><label className="block text-xs font-medium" htmlFor={`motivo-${stop.id}`}>Motivo de reasignación</label><textarea id={`motivo-${stop.id}`} value={reason} maxLength={500} onChange={e => setReason(e.target.value)} placeholder="Ej. avería del vehículo" className="w-full rounded-lg border border-slate-200 p-2 text-sm"/><div className="flex gap-2"><Button size="sm" disabled={!reassignDriver || busy} onClick={() => void reassign(stop.pedidoId)}>Confirmar reasignación</Button><Button size="sm" variant="outline" onClick={() => setReassignId(null)}>Cancelar</Button></div></div>}
+          {role === "OPERADOR" && historyOrder === stop.pedidoId && <div className="mt-3 rounded-xl bg-slate-50 p-3 text-xs"><h3 className="font-semibold">Historial de asignaciones</h3>{!history.length && <p className="mt-2 text-slate-500">Sin registros.</p>}{history.map(h => <p key={h.id} className="mt-2 border-t pt-2">{h.accion === "ASIGNACION" ? "Asignación" : "Reasignación"} · {formatDate(h.fecha)} · Conductor {h.conductorAnteriorId || "sin asignar"} → {h.conductorNuevoId}{h.motivo ? ` · ${h.motivo}` : ""}</p>)}</div>}
+          </li>)}</ol>
+          {!route.paradas.length && <p className="mt-5 text-sm text-slate-500">Tu ruta existe, pero no tiene entregas pendientes.</p>}</>
+        : <div className="mt-5 rounded-xl border border-dashed border-slate-200 p-7 text-center"><RouteIcon className="mx-auto size-7 text-slate-400"/><p className="mt-3 text-sm text-slate-500">{loading ? "Consultando ruta..." : role === "CONDUCTOR" ? "Todavía no tienes una ruta para hoy." : "Selecciona un conductor para consultar su ruta."}</p></div>}
+      </section>
     </div>
-  );
+  </div>;
 }

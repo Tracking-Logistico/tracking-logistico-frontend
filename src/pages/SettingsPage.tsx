@@ -1,45 +1,28 @@
-import { Link } from "react-router-dom";
-import { ArrowLeft, KeyRound } from "lucide-react";
+import { useEffect, useState } from "react";
+import type { FormEvent } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, KeyRound, UserRound } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { api, getApiError } from "@/lib/api";
+import { FormField } from "@/components/FormField";
+import { Button } from "@/components/ui/button";
 
 export function SettingsPage() {
-  usePageMeta("Configuración", "Configuración de tu sesión en LogisTrack.");
-  const role = useAuthStore((state) => state.role);
-  return (
-    <div className="mx-auto max-w-4xl px-5 py-8 sm:px-8 lg:px-10">
-      <Link
-        to="/panel"
-        className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-950"
-      >
-        <ArrowLeft className="size-4" />
-        Volver al resumen
-      </Link>
-      <h1 className="mt-8 text-3xl font-semibold tracking-tight">
-        Configuración
-      </h1>
-      <p className="mt-3 text-sm text-slate-500">
-        Preferencias y seguridad de tu sesión actual.
-      </p>
-      <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex items-start gap-4">
-          <span className="grid size-10 place-items-center rounded-lg bg-emerald-100 text-emerald-700">
-            <KeyRound className="size-5" />
-          </span>
-          <div>
-            <h2 className="font-semibold">Seguridad de la cuenta</h2>
-            <p className="mt-1 text-sm leading-6 text-slate-500">
-              Rol actual: {role}. El cambio de contraseña requiere el
-              identificador de usuario, que el backend todavía no devuelve en el
-              login.
-            </p>
-            <p className="mt-4 text-sm text-amber-700">
-              La pantalla queda preparada, pero la operación no se habilita para
-              evitar enviar un ID inventado.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  usePageMeta("Configuración", "Seguridad y datos de tu cuenta en LogisTrack.");
+  const { role, userId, accessToken, requiresPasswordChange, clearSession } = useAuthStore();
+  const [password,setPassword]=useState({actual:"",nueva:"",confirmacion:""});
+  const [profile,setProfile]=useState({nombre:"",telefono:"",direccion:""});
+  const [message,setMessage]=useState(""); const [error,setError]=useState(""); const [loading,setLoading]=useState(false); const navigate=useNavigate();
+
+  useEffect(()=>{ if(role === "CLIENTE" && accessToken && !requiresPasswordChange) api.myProfile(accessToken).then(p=>setProfile({nombre:p.nombre,telefono:p.telefono??"",direccion:p.direccion??""})).catch(()=>undefined); },[role,accessToken,requiresPasswordChange]);
+
+  async function changePassword(e: FormEvent){e.preventDefault(); setError(""); setMessage(""); if(!userId||!accessToken)return setError("La sesión no contiene la información necesaria."); if(password.nueva!==password.confirmacion)return setError("Las contraseñas nuevas no coinciden."); setLoading(true); try{await api.changePassword(userId,password.actual,password.nueva,password.confirmacion,accessToken); setMessage("Contraseña actualizada. Inicia sesión nuevamente con tu contraseña definitiva."); setTimeout(()=>{clearSession(); navigate("/login",{replace:true});},800);}catch(err){setError(getApiError(err,"No fue posible actualizar la contraseña."));}finally{setLoading(false)}}
+  async function saveProfile(e: FormEvent){e.preventDefault(); if(!accessToken)return; setError(""); setMessage(""); setLoading(true); try{await api.updateMyProfile(profile,accessToken); setMessage("Datos personales actualizados.");}catch(err){setError(getApiError(err,"No fue posible actualizar el perfil."));}finally{setLoading(false)}}
+  async function deactivate(){if(!accessToken || !confirm("¿Confirmas que deseas desactivar tu cuenta? El historial de envíos se conservará."))return; setLoading(true); try{await api.deactivateMyAccount(accessToken); clearSession(); navigate("/",{replace:true});}catch(err){setError(getApiError(err,"No fue posible desactivar la cuenta.")); setLoading(false)}}
+
+  return <div className="mx-auto max-w-4xl px-5 py-8 sm:px-8 lg:px-10">{!requiresPasswordChange && <Link to="/panel" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-950"><ArrowLeft className="size-4"/>Volver al resumen</Link>}<h1 className="mt-8 text-3xl font-semibold tracking-tight">{requiresPasswordChange ? "Activa tu cuenta" : "Configuración"}</h1><p className="mt-3 text-sm text-slate-500">{requiresPasswordChange ? "Por seguridad debes cambiar la contraseña temporal antes de continuar." : `Sesión activa con rol ${role}.`}</p>
+  {role === "CLIENTE" && !requiresPasswordChange && <form onSubmit={saveProfile} className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><div className="flex items-start gap-4"><span className="grid size-10 shrink-0 place-items-center rounded-lg bg-emerald-100 text-emerald-700"><UserRound className="size-5"/></span><div className="w-full"><h2 className="font-semibold">Datos personales</h2><div className="mt-5 grid gap-4"><FormField label="Nombre" name="nombre" required value={profile.nombre} onChange={e=>setProfile({...profile,nombre:e.target.value})}/><FormField label="Teléfono" name="telefono" type="tel" value={profile.telefono} onChange={e=>setProfile({...profile,telefono:e.target.value})}/><FormField label="Dirección" name="direccion" value={profile.direccion} onChange={e=>setProfile({...profile,direccion:e.target.value})}/></div><div className="mt-5 flex flex-wrap gap-3"><Button type="submit" disabled={loading}>Guardar cambios</Button><Button type="button" variant="outline" disabled={loading} onClick={deactivate}>Desactivar cuenta</Button></div></div></div></form>}
+  <form onSubmit={changePassword} className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><div className="flex items-start gap-4"><span className="grid size-10 shrink-0 place-items-center rounded-lg bg-emerald-100 text-emerald-700"><KeyRound className="size-5"/></span><div className="w-full"><h2 className="font-semibold">Cambiar contraseña</h2><div className="mt-5 grid gap-4"><FormField label="Contraseña actual" name="actual" type="password" required value={password.actual} onChange={e=>setPassword({...password,actual:e.target.value})}/><FormField label="Nueva contraseña" name="nueva" type="password" required hint="Mínimo 8 caracteres con mayúscula, minúscula, número y símbolo." value={password.nueva} onChange={e=>setPassword({...password,nueva:e.target.value})}/><FormField label="Confirmar nueva contraseña" name="confirmacion" type="password" required value={password.confirmacion} onChange={e=>setPassword({...password,confirmacion:e.target.value})}/></div><Button className="mt-5" type="submit" disabled={loading}>{loading?"Actualizando...":"Actualizar contraseña"}</Button></div></div></form>
+  {error&&<p className="mt-4 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}{message&&<p className="mt-4 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700">{message}</p>}</div>;
 }

@@ -20,6 +20,11 @@ export function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [expired] = useState(() => {
+    const flagged = window.sessionStorage.getItem("logistrack-session-expired") === "1";
+    window.sessionStorage.removeItem("logistrack-session-expired");
+    return flagged;
+  });
   const [loading, setLoading] = useState(false);
   const signIn = useAuthStore((state) => state.signIn);
   const navigate = useNavigate();
@@ -31,8 +36,9 @@ export function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      await signIn(email, password);
-      navigate(from, { replace: true });
+      const session = await signIn(email, password);
+      const destination = from === "/panel" || !from.startsWith("/panel/") ? session.panel : from;
+      navigate(session.requiereCambioPassword ? "/panel/configuracion" : destination, { replace: true });
     } catch (err) {
       setError(
         getApiError(err, "Revisa tus credenciales e inténtalo de nuevo."),
@@ -89,6 +95,7 @@ export function LoginPage() {
             Usa las credenciales entregadas por tu equipo o las de tu cuenta de
             cliente.
           </p>
+          {expired && <p role="status" className="mt-5 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">Tu sesión se cerró por inactividad. Inicia sesión nuevamente.</p>}
           <form className="mt-8 space-y-5" onSubmit={submit}>
             <FormField
               label="Correo electrónico"

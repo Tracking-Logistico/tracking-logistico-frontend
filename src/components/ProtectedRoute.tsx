@@ -8,7 +8,7 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ roles }: ProtectedRouteProps) {
   const location = useLocation();
-  const { accessToken, role, isHydrated } = useAuthStore();
+  const { accessToken, role, isHydrated, requiresPasswordChange } = useAuthStore();
 
   if (!isHydrated) {
     return (
@@ -19,6 +19,8 @@ export function ProtectedRoute({ roles }: ProtectedRouteProps) {
   }
   if (!accessToken)
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  if (requiresPasswordChange && location.pathname !== "/panel/configuracion")
+    return <Navigate to="/panel/configuracion" replace />;
   if (roles && role && !roles.includes(role))
     return <Navigate to="/panel" replace />;
   return <Outlet />;

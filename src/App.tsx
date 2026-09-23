@@ -1,9 +1,11 @@
-import { Routes, Route, Outlet } from "react-router-dom";
+import { Routes, Route, Outlet, Navigate } from "react-router-dom";
+import { useAuthStore } from "@/stores/authStore";
 import { Navbar } from "./components/Navbar";
 import { AppShell } from "./components/AppShell";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { HomePage } from "./pages/HomePage";
 import { LoginPage } from "./pages/LoginPage";
+import { LegalPage } from "./pages/LegalPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { VerifyPage } from "./pages/VerifyPage";
@@ -22,6 +24,8 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/registro" element={<RegisterPage />} />
+          <Route path="/terminos" element={<LegalPage kind="terms" />} />
+          <Route path="/politica-datos" element={<LegalPage kind="privacy" />} />
           <Route path="/recuperar-password" element={<ForgotPasswordPage />} />
           <Route path="/verificar" element={<VerifyPage />} />
           <Route
@@ -31,9 +35,18 @@ export default function App() {
         </Route>
         <Route element={<ProtectedRoute />}>
           <Route element={<AppShell />}>
-            <Route path="/panel" element={<DashboardPage />} />
-            <Route path="/panel/configuracion" element={<SettingsPage />} />
+            <Route path="/panel" element={<RoleHomeRedirect />} />
+            <Route element={<ProtectedRoute roles={["CLIENTE"]} />}>
+              <Route path="/panel/cliente" element={<DashboardPage />} />
+            </Route>
             <Route element={<ProtectedRoute roles={["OPERADOR"]} />}>
+              <Route path="/panel/operador" element={<DashboardPage />} />
+            </Route>
+            <Route element={<ProtectedRoute roles={["CONDUCTOR"]} />}>
+              <Route path="/panel/conductor" element={<DashboardPage />} />
+            </Route>
+            <Route path="/panel/configuracion" element={<SettingsPage />} />
+            <Route element={<ProtectedRoute roles={["CLIENTE", "OPERADOR"]} />}>
               <Route path="/panel/pedidos" element={<OrdersPage />} />
             </Route>
             <Route element={<ProtectedRoute roles={["OPERADOR"]} />}>
@@ -58,4 +71,12 @@ function PublicLayout() {
       <Outlet />
     </>
   );
+}
+
+function RoleHomeRedirect() {
+  const role = useAuthStore((state) => state.role);
+  const home = role === "CLIENTE" ? "/panel/cliente"
+    : role === "OPERADOR" ? "/panel/operador"
+    : role === "CONDUCTOR" ? "/panel/conductor" : "/login";
+  return <Navigate to={home} replace />;
 }

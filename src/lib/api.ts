@@ -1,202 +1,126 @@
-import type {
-  ApiErrorShape,
-  LoginResponse,
-  RegisterPayload,
-  ClientResponse,
-  LabelResponse,
-  OrderResponse,
-  ReceiveOrderPayload,
-  RouteResponse,
-  ValidateOrderPayload,
-} from "@/types/api";
+import type { ApiErrorShape, ClientResponse, DriverResponse, LabelResponse, LoginResponse, OrderResponse, OrderEvent, ReceiveOrderPayload, RegisterPayload, RouteResponse, RouteNotification, AssignmentEvent, UserResponse, ValidateOrderPayload } from "@/types/api";
 
-const API_URL = (
-  import.meta.env.VITE_API_URL ??
-  "https://tracking-logistico-backend.onrender.com/api/v1"
-).replace(/\/$/, "");
+// Si el frontend se abre fuera de Docker en localhost, no llamar por accidente
+// a la BD de producción. Netlify usa VITE_API_URL o el servicio Render.
+const DEFAULT_API_URL = /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname)
+  ? "http://localhost:8080/api/v1"
+  : "https://tracking-logistico-backend.onrender.com/api/v1";
+const API_URL = (import.meta.env.VITE_API_URL || DEFAULT_API_URL).replace(/\/$/, "");
 
 async function parseResponse<T>(response: Response): Promise<T> {
   const contentType = response.headers.get("content-type") ?? "";
-  const body: unknown = contentType.includes("application/json")
-    ? await response.json()
-    : await response.text();
-
+  const body: unknown = response.status === 204 ? undefined
+    : contentType.includes("application/json") ? await response.json() : await response.text();
   if (!response.ok) {
-    const errorBody =
-      typeof body === "object" && body !== null
-        ? (body as Record<string, unknown>)
-        : {};
-    const details =
-      typeof errorBody.errors === "object" && errorBody.errors !== null
-        ? (errorBody.errors as Record<string, string>)
-        : (Object.fromEntries(
-            Object.entries(errorBody).filter(
-              ([key, value]) =>
-                key !== "message" &&
-                key !== "error" &&
-                typeof value === "string",
-            ),
-          ) as Record<string, string>);
-    const message =
-      typeof errorBody.message === "string"
-        ? errorBody.message
-        : typeof errorBody.error === "string"
-          ? errorBody.error
-          : Object.values(details)[0]
-            ? Object.values(details)[0]
-            : typeof body === "string" && body.length > 0
-              ? body
-              : "No se pudo completar la operación.";
+    const obj = typeof body === "object" && body !== null ? body as Record<string, unknown> : {};
+    const details = Object.fromEntries(Object.entries(obj).filter(([k,v]) => k !== "message" && k !== "error" && typeof v === "string")) as Record<string,string>;
+    const message = typeof obj.message === "string" ? obj.message : typeof obj.error === "string" ? obj.error : Object.values(details)[0] ?? (typeof body === "string" ? body : "No se pudo completar la operación.");
     throw { message, status: response.status, details } satisfies ApiErrorShape;
   }
-
   return body as T;
 }
 
-async function request<T>(
-  path: string,
-  init: RequestInit = {},
-  token?: string,
-): Promise<T> {
+// Una sola renovación en vuelo para que las solicitudes simultáneas no consuman
+// el mismo refresh token varias veces. El backend rota la sesión al renovar.
+let refreshInFlight: Promise<string> | null = null;
+
+async function renewAccessToken(rejectedToken: string): Promise<string> {
+  const { useAuthStore } = await import("@/stores/authStore");
+  const current = useAuthStore.getState();
+  if (current.accessToken && current.accessToken !== rejectedToken) return current.accessToken;
+  if (!current.refreshToken) throw new Error("La sesión ha expirado");
+  if (!refreshInFlight) {
+    const originalRefresh = current.refreshToken;
+    refreshInFlight = (async () => {
+      try {
+        const response = await fetch(`${API_URL}/auth/refresh`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ refreshToken: originalRefresh }),
+        });
+        const session = await parseResponse<LoginResponse>(response);
+        // No sustituir una sesión nueva por una respuesta de renovación antigua.
+        if (useAuthStore.getState().refreshToken === originalRefresh) {
+          useAuthStore.getState().applySession(session);
+        }
+        return useAuthStore.getState().accessToken ?? session.accessToken;
+      } catch (error) {
+        if (useAuthStore.getState().refreshToken === originalRefresh) {
+          useAuthStore.getState().clearSession();
+        }
+        throw error;
+      }
+    })().finally(() => { refreshInFlight = null; });
+  }
+  return refreshInFlight;
+}
+
+async function request<T>(path: string, init: RequestInit = {}, token?: string, extraHeaders?: Record<string,string>): Promise<T> {
   const headers = new Headers(init.headers);
   headers.set("Content-Type", "application/json");
   if (token) headers.set("Authorization", `Bearer ${token}`);
-  const response = await fetch(`${API_URL}${path}`, { ...init, headers });
+  Object.entries(extraHeaders ?? {}).forEach(([k,v]) => headers.set(k,v));
+  let response = await fetch(`${API_URL}${path}`, { ...init, headers });
+  if (response.status === 401 && token && path !== "/auth/logout") {
+    try {
+      const replacement = await renewAccessToken(token);
+      headers.set("Authorization", `Bearer ${replacement}`);
+      response = await fetch(`${API_URL}${path}`, { ...init, headers });
+    } catch {
+      // Retornar el error original (401); el estado de autenticación ya se limpió.
+    }
+  }
   return parseResponse<T>(response);
 }
 
 export const api = {
-  login: (email: string, password: string) =>
-    request<LoginResponse>("/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ email, password }),
-    }),
-  refresh: (refreshToken: string) =>
-    request<LoginResponse>("/auth/refresh", {
-      method: "POST",
-      body: JSON.stringify({ refreshToken }),
-    }),
-  logout: (accessToken: string) =>
-    request<void>(
-      "/auth/logout",
-      {
-        method: "POST",
-      },
-      accessToken,
-    ),
-  forgotPassword: (email: string) =>
-    request<string>("/auth/password/forgot", {
-      method: "POST",
-      body: JSON.stringify({ email }),
-    }),
-  resetPassword: (
-    token: string,
-    nuevaPassword: string,
-    confirmarPassword: string,
-  ) =>
-    request<void>("/auth/password/reset", {
-      method: "POST",
-      body: JSON.stringify({ token, nuevaPassword, confirmarPassword }),
-    }),
-  registerClient: (payload: RegisterPayload) =>
-    request<ClientResponse>("/clientes/registro", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    }),
-  verifyClient: (token: string) =>
-    request<string>(`/clientes/verificar?token=${encodeURIComponent(token)}`),
-  receiveOrder: (payload: ReceiveOrderPayload, token: string) =>
-    request<OrderResponse>(
-      "/pedidos",
-      {
-        method: "POST",
-        body: JSON.stringify(payload),
-      },
-      token,
-    ),
-  listPendingOrders: (token: string) =>
-    request<OrderResponse[]>("/pedidos/pendientes", {}, token),
-  listInTransitOrders: (token: string) =>
-    request<OrderResponse[]>("/pedidos/activables", {}, token),
-  listValidatedOrders: (token: string) =>
-    request<OrderResponse[]>("/pedidos/validados", {}, token),
-  getOrder: (id: number, token: string) =>
-    request<OrderResponse>(`/pedidos/${id}`, {}, token),
-  getOrderByTracking: (tracking: string, token: string) =>
-    request<OrderResponse>(
-      `/pedidos/tracking/${encodeURIComponent(tracking)}`,
-      {},
-      token,
-    ),
-  validateOrder: (id: number, payload: ValidateOrderPayload, token: string) =>
-    request<OrderResponse>(
-      `/pedidos/${id}/validar`,
-      {
-        method: "PUT",
-        body: JSON.stringify(payload),
-      },
-      token,
-    ),
-  activateTracking: (id: number, token: string) =>
-    request<OrderResponse>(
-      `/pedidos/${id}/activar-tracking`,
-      { method: "PUT" },
-      token,
-    ),
-  generateLabel: (id: number, token: string) =>
-    request<LabelResponse>(
-      `/pedidos/${id}/etiqueta`,
-      { method: "POST" },
-      token,
-    ),
-  listPendingRouteOrders: (token: string) =>
-    request<OrderResponse[]>("/rutas/envios-pendientes", {}, token),
-  assignRouteOrder: (pedidoId: number, conductorId: number, token: string) =>
-    request<RouteResponse>(
-      "/rutas/asignaciones",
-      {
-        method: "POST",
-        body: JSON.stringify({ pedidoId, conductorId }),
-      },
-      token,
-    ),
-  getDriverRoute: (conductorId: number, token: string) =>
-    request<RouteResponse>(`/rutas/conductores/${conductorId}`, {}, token),
-  reorderRoute: (routeId: number, pedidoIdsEnOrden: number[], token: string) =>
-    request<RouteResponse>(
-      `/rutas/${routeId}/orden`,
-      {
-        method: "PUT",
-        body: JSON.stringify({ pedidoIdsEnOrden }),
-      },
-      token,
-    ),
-  reassignRouteOrder: (
-    pedidoId: number,
-    nuevoConductorId: number,
-    token: string,
-  ) =>
-    request<RouteResponse>(
-      "/rutas/asignaciones/reasignar",
-      {
-        method: "PUT",
-        body: JSON.stringify({ pedidoId, nuevoConductorId }),
-      },
-      token,
-    ),
+  login: (email: string, password: string) => request<LoginResponse>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
+  refresh: (refreshToken: string) => request<LoginResponse>("/auth/refresh", { method: "POST", body: JSON.stringify({ refreshToken }) }),
+  logout: (token: string) => request<void>("/auth/logout", { method: "POST" }, token),
+  forgotPassword: (email: string) => request<string>("/auth/password/forgot", { method: "POST", body: JSON.stringify({ email }) }),
+  resetPassword: (token: string, nuevaPassword: string, confirmarPassword: string) => request<void>("/auth/password/reset", { method: "POST", body: JSON.stringify({ token, nuevaPassword, confirmarPassword }) }),
+  registerClient: (payload: RegisterPayload) => request<ClientResponse>("/clientes/registro", { method: "POST", body: JSON.stringify(payload) }),
+  resendVerification: (email: string) => request<string>("/clientes/verificacion/reenviar", { method: "POST", body: JSON.stringify({ email }) }),
+  verifyClient: (token: string) => request<string>(`/clientes/verificar?token=${encodeURIComponent(token)}`),
+  changePassword: (userId: number, passwordActual: string, nuevaPassword: string, confirmarPassword: string, token: string) => request<string>(`/usuarios/${userId}/password`, { method: "PUT", body: JSON.stringify({ passwordActual, nuevaPassword, confirmarPassword }) }, token),
+  myProfile: (token: string) => request<ClientResponse>("/clientes/me", {}, token),
+  updateMyProfile: (payload: { nombre: string; telefono?: string; direccion?: string }, token: string) => request<UserResponse>("/clientes/me/perfil", { method: "PUT", body: JSON.stringify(payload) }, token),
+  deactivateMyAccount: (token: string) => request<void>("/clientes/me", { method: "DELETE" }, token),
+
+  createOrder: (payload: ReceiveOrderPayload, token: string) => request<OrderResponse>("/pedidos", { method: "POST", body: JSON.stringify(payload) }, token),
+  correctOrder: (id: number, payload: ReceiveOrderPayload, token: string) => request<OrderResponse>(`/pedidos/${id}/corregir`, { method: "PUT", body: JSON.stringify(payload) }, token),
+  orderHistory: (id: number, token: string) => request<OrderEvent[]>(`/pedidos/${id}/historial`, {}, token),
+  myOrders: (token: string) => request<OrderResponse[]>("/pedidos/mios", {}, token),
+  listPendingOrders: (token: string) => request<OrderResponse[]>("/pedidos/pendientes", {}, token),
+  listActivableOrders: (token: string) => request<OrderResponse[]>("/pedidos/activables", {}, token),
+  listDispatchOrders: (token: string) => request<OrderResponse[]>("/pedidos/despachos", {}, token),
+  validateOrder: (id: number, payload: ValidateOrderPayload, token: string) => request<OrderResponse>(`/pedidos/${id}/validar`, { method: "PUT", body: JSON.stringify(payload) }, token),
+  activateTracking: (id: number, token: string) => request<OrderResponse>(`/pedidos/${id}/activar-tracking`, { method: "PUT" }, token),
+  setLogisticsState: (id: number, estado: "RECIBIDO_EN_ORIGEN" | "EN_TRANSITO", token: string) => request<OrderResponse>(`/pedidos/${id}/estado-logistico`, { method: "PUT", body: JSON.stringify({ estado }) }, token),
+  getOrderByTracking: (tracking: string, token: string) => request<OrderResponse>(`/pedidos/tracking/${encodeURIComponent(tracking)}`, {}, token),
+  generateLabel: (id: number, token: string) => request<LabelResponse>(`/pedidos/${id}/etiqueta`, { method: "POST" }, token),
+
+  listPendingRouteOrders: (token: string) => request<OrderResponse[]>("/rutas/envios-pendientes", {}, token),
+  listDrivers: (token: string) => request<DriverResponse[]>("/rutas/conductores-disponibles", {}, token),
+  assignRouteOrder: (pedidoId: number, conductorId: number, token: string) => request<RouteResponse>("/rutas/asignaciones", { method: "POST", body: JSON.stringify({ pedidoId, conductorId }) }, token),
+  getDriverRoute: (conductorId: number, token: string) => request<RouteResponse>(`/rutas/conductores/${conductorId}`, {}, token),
+  myDriverRoute: (token: string) => request<RouteResponse>('/rutas/mi-ruta', {}, token),
+  assignRouteOrders: (pedidoIds: number[], conductorId: number, token: string) => request<RouteResponse>('/rutas/asignaciones/lote', { method: 'POST', body: JSON.stringify({ pedidoIds, conductorId }) }, token),
+  routeNotifications: (token: string) => request<RouteNotification[]>('/rutas/mis-notificaciones', {}, token),
+  readRouteNotification: (id: number, token: string) => request<void>(`/rutas/mis-notificaciones/${id}/leer`, { method: 'PATCH' }, token),
+  routeAssignmentHistory: (pedidoId: number, token: string) => request<AssignmentEvent[]>(`/rutas/asignaciones/${pedidoId}/historial`, {}, token),
+  reorderRoute: (routeId: number, pedidoIdsEnOrden: number[], token: string) => request<RouteResponse>(`/rutas/${routeId}/orden`, { method: "PUT", body: JSON.stringify({ pedidoIdsEnOrden }) }, token),
+  reassignRouteOrder: (pedidoId: number, nuevoConductorId: number, motivo: string, token: string) => request<RouteResponse>("/rutas/asignaciones/reasignar", { method: "PUT", body: JSON.stringify({ pedidoId, nuevoConductorId, motivo }) }, token),
+
+  adminUsers: (dbaKey: string) => request<UserResponse[]>("/admin/usuarios", {}, undefined, { "X-DBA-Key": dbaKey }),
+  adminChangeRole: (id: number, body: { rol: "OPERADOR" | "CONDUCTOR"; licencia?: string; codigoEmpleado?: string }, dbaKey: string) => request<UserResponse>(`/admin/usuarios/${id}/rol`, { method: "PATCH", body: JSON.stringify(body) }, undefined, { "X-DBA-Key": dbaKey }),
 };
 
-export function getApiError(
-  error: unknown,
-  fallback = "Ocurrió un error inesperado.",
-): string {
-  if (typeof error === "object" && error !== null && "message" in error) {
-    const message = (error as { message?: unknown }).message;
-    if (typeof message === "string") return message;
-  }
-  if (typeof error === "object" && error !== null && "details" in error) {
-    const details = (error as { details?: Record<string, string> }).details;
-    if (details) return Object.values(details).join(" ");
+export function getApiError(error: unknown, fallback = "Ocurrió un error inesperado.") {
+  if (typeof error === "object" && error !== null && "message" in error && typeof (error as {message?: unknown}).message === "string") {
+    const apiError = error as ApiErrorShape;
+    const fields = apiError.details ? Object.entries(apiError.details).map(([field, detail]) => `${field}: ${detail}`) : [];
+    if (apiError.message === "Revisa los campos señalados" && fields.length) return fields.join(" · ");
+    return apiError.message;
   }
   return fallback;
 }

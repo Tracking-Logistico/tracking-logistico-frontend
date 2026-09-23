@@ -1,257 +1,135 @@
-/* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
-import { useEffect, useState } from "react";
-import type { FormEvent } from "react";
-import { QRCodeSVG } from "qrcode.react";
-import {
-  Download,
-  LoaderCircle,
-  PackageCheck,
-  Play,
-  Search,
-  Tag,
-} from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Download, LoaderCircle, PackageCheck, RefreshCw, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { api, getApiError } from "@/lib/api";
 import { useAuthStore } from "@/stores/authStore";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import type { LabelResponse, OrderResponse } from "@/types/api";
 
-function downloadLabel(label: LabelResponse) {
-  const blob = new Blob([label.contenido], {
-    type: "text/plain;charset=utf-8",
-  });
-  const url = URL.createObjectURL(blob);
+const statusNames: Record<string, string> = {
+  SOLICITADO: "Validado · listo para activar",
+  CREADO: "Tracking activo",
+  RECIBIDO_EN_ORIGEN: "Recibido en origen",
+  EN_TRANSITO: "En tránsito",
+};
+
+function downloadPdf(label: LabelResponse) {
+  const bytes = Uint8Array.from(atob(label.contenido), (char) => char.charCodeAt(0));
+  const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `etiqueta-${label.numeroTracking}.txt`;
+  anchor.download = `etiqueta-${label.numeroTracking}.pdf`;
+  document.body.append(anchor);
   anchor.click();
-  URL.revokeObjectURL(url);
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
 export function ShipmentsPage() {
-  usePageMeta(
-    "Envíos",
-    "Activa envíos, genera etiquetas y consulta su tracking.",
-  );
+  usePageMeta("Despachos", "Control de tracking, etiquetas y tránsito de envíos.");
   const token = useAuthStore((state) => state.accessToken);
   const [orders, setOrders] = useState<OrderResponse[]>([]);
-  const [tracking, setTracking] = useState("");
-  const [result, setResult] = useState<OrderResponse | null>(null);
-  const [label, setLabel] = useState<LabelResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [workingId, setWorkingId] = useState<number | null>(null);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const load = async () => {
+  const [message, setMessage] = useState("");
+
+  const load = useCallback(async () => {
     if (!token) return;
     setLoading(true);
+    setError("");
     try {
-      setOrders(await api.listInTransitOrders(token));
+      setOrders(await api.listDispatchOrders(token));
     } catch (err) {
-      setError(
-        getApiError(err, "No se pudieron cargar los envíos en tránsito."),
-      );
+      setError(getApiError(err));
     } finally {
       setLoading(false);
     }
-  };
-  useEffect(() => {
-    void load();
   }, [token]);
-  async function activate(id: number) {
-    if (!token) return;
+
+  useEffect(() => { void load(); }, [load]);
+
+  async function perform(id: number, action: () => Promise<string>) {
+    if (workingId !== null) return;
+    setWorkingId(id);
     setError("");
+    setMessage("");
     try {
-      const updated = await api.activateTracking(id, token);
-      setSuccess(`Tracking activado: ${updated.numeroTracking ?? "generado"}.`);
+      const result = await action();
       await load();
+      setMessage(result);
     } catch (err) {
-      setError(
-        getApiError(
-          err,
-          "El pedido debe estar validado antes de activar el tracking.",
-        ),
-      );
+      setError(getApiError(err));
+    } finally {
+      setWorkingId(null);
     }
   }
-  async function createLabel(id: number) {
-    if (!token) return;
-    setError("");
-    try {
-      const generated = await api.generateLabel(id, token);
-      setLabel(generated);
-      setSuccess(`Etiqueta lista para ${generated.numeroTracking}.`);
-    } catch (err) {
-      setError(getApiError(err, "No se pudo generar la etiqueta."));
-    }
-  }
-  async function search(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!token || !tracking.trim()) return;
-    setError("");
-    setResult(null);
-    try {
-      setResult(await api.getOrderByTracking(tracking.trim(), token));
-    } catch (err) {
-      setError(getApiError(err, "No se encontró un envío con ese código."));
-    }
-  }
-  return (
-    <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8 lg:px-10">
-      <header className="border-b border-slate-200 pb-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-emerald-700">
-          HU-03B
-        </p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-          Activación, etiquetas y seguimiento
-        </h1>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-          Activa el tracking de pedidos validados, genera su etiqueta y consulta
-          el estado mediante el código único.
-        </p>
-      </header>
-      {(error || success) && (
-        <p
-          role={error ? "alert" : "status"}
-          className={`mt-6 rounded-lg px-4 py-3 text-sm ${error ? "bg-rose-50 text-rose-700" : "bg-emerald-50 text-emerald-700"}`}
-        >
-          {error || success}
-        </p>
-      )}
-      <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex items-center gap-3">
-          <span className="grid size-9 place-items-center rounded-lg bg-emerald-100 text-emerald-700">
-            <Search className="size-4" />
-          </span>
-          <div>
-            <h2 className="font-semibold">Consultar tracking</h2>
-            <p className="text-xs text-slate-500">
-              Consulta el estado actual por número de guía.
-            </p>
-          </div>
-        </div>
-        <form
-          className="mt-5 flex flex-col gap-3 sm:flex-row"
-          onSubmit={search}
-        >
-          <input
-            className="h-11 min-w-0 flex-1 rounded-lg border border-slate-200 px-3 font-mono text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
-            aria-label="Número de tracking"
-            placeholder="TRK-89234710-CO"
-            value={tracking}
-            onChange={(e) => setTracking(e.target.value)}
-          />
-          <Button type="submit" disabled={!tracking.trim()}>
-            Buscar envío
-          </Button>
-        </form>
-        {result && (
-          <div className="mt-5 rounded-xl bg-slate-50 p-5">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="font-mono font-semibold">
-                  {result.numeroTracking}
-                </p>
-                <p className="mt-1 text-sm text-slate-600">
-                  {result.direccionOrigen} → {result.direccionDestino}
-                </p>
-              </div>
-              <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">
-                {result.estado}
-              </span>
-            </div>
-            <p className="mt-3 text-sm text-slate-500">
-              Pedido {result.numeroPedido} · {result.tipoServicio} ·{" "}
-              {result.pesoKg} kg
-            </p>
-          </div>
-        )}
-      </section>
-      <section className="mt-8">
-        <div className="flex items-center gap-3">
-          <PackageCheck className="size-5 text-emerald-700" />
-          <div>
-            <h2 className="text-xl font-semibold">Envíos en tránsito</h2>
-            <p className="text-sm text-slate-500">
-              Activa tracking desde pedidos validados y genera la etiqueta.
-            </p>
-          </div>
-        </div>
-        <div className="mt-4 space-y-3">
-          {loading && (
-            <div className="flex items-center gap-2 text-sm text-slate-500">
-              <LoaderCircle className="size-4 animate-spin" />
-              Cargando envíos...
-            </div>
-          )}
-          {!loading && orders.length === 0 && (
-            <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
-              No hay envíos en tránsito todavía.
-            </div>
-          )}
-          {orders.map((order) => (
-            <article
-              key={order.id}
-              className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div>
-                <p className="font-mono text-sm font-semibold">
-                  {order.numeroPedido}
-                </p>
-                <p className="mt-1 text-sm text-slate-600">
-                  {order.direccionOrigen} → {order.direccionDestino}
-                </p>
-                <p className="mt-2 text-xs text-slate-500">
-                  {order.numeroTracking ?? "Sin tracking"} · {order.estado}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button size="sm" onClick={() => void activate(order.id)}>
-                  <Play className="size-4" />
-                  Activar tracking
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={!order.numeroTracking}
-                  onClick={() => void createLabel(order.id)}
-                >
-                  <Tag className="size-4" />
-                  Generar etiqueta
-                </Button>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-      {label && (
-        <section className="mt-8 rounded-2xl border border-emerald-200 bg-emerald-50 p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">
-                Etiqueta generada
-              </p>
-              <h2 className="mt-1 font-mono font-semibold">
-                {label.numeroTracking}
-              </h2>
-            </div>
-            <Button onClick={() => downloadLabel(label)}>
-              <Download className="size-4" />
-              Descargar etiqueta
-            </Button>
-          </div>
-          <div className="mt-5 grid gap-5 rounded-lg bg-white p-4 sm:grid-cols-[auto_1fr] sm:items-center">
-            <div className="flex justify-center">
-              <QRCodeSVG
-                value={label.numeroTracking}
-                size={148}
-                includeMargin
-              />
-            </div>
-            <pre className="max-h-64 overflow-auto text-xs text-slate-700">
-              {label.contenido}
-            </pre>
-          </div>
-        </section>
-      )}
+
+  const waiting = orders.filter((order) => !order.numeroTracking).length;
+  const inTransit = orders.filter((order) => order.estado === "EN_TRANSITO").length;
+
+  return <div className="mx-auto max-w-6xl px-5 py-9 sm:px-8 lg:px-10">
+    <header className="flex flex-wrap items-end justify-between gap-5 border-b border-slate-200 pb-7">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[.18em] text-emerald-700">Operación logística</p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight">Centro de despachos</h1>
+        <p className="mt-3 max-w-xl text-sm leading-6 text-slate-600">Activa el seguimiento, imprime etiquetas y registra cada avance hasta que el envío esté listo para reparto.</p>
+      </div>
+      <Button variant="outline" disabled={loading || workingId !== null} onClick={() => void load()}>
+        <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`}/> Actualizar
+      </Button>
+    </header>
+
+    <div className="mt-6 grid gap-3 sm:grid-cols-3">
+      <Summary label="En preparación o tránsito" value={orders.length}/>
+      <Summary label="Sin tracking" value={waiting}/>
+      <Summary label="En tránsito" value={inTransit}/>
     </div>
-  );
+
+    {error && <p role="alert" className="mt-5 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">{error}</p>}
+    {message && <p role="status" className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">{message}</p>}
+
+    <div className="mt-7 space-y-3">
+      {loading && <p className="flex items-center gap-2 py-6 text-sm text-slate-500"><LoaderCircle className="size-4 animate-spin"/> Consultando despachos...</p>}
+      {!loading && orders.length === 0 && <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-500">No hay envíos pendientes de despacho.</div>}
+      {orders.map((order) => <article key={order.id} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="font-mono text-sm font-semibold text-slate-900">{order.numeroPedido}</p>
+            <p className="mt-2 text-sm font-medium text-slate-800">{order.destinatarioNombre || "Destinatario"}</p>
+            <p className="mt-1 text-sm text-slate-600">{order.direccionDestino} · {order.ciudadDestino}</p>
+            <p className="mt-2 font-mono text-xs text-slate-500">{order.numeroTracking || "Guía pendiente de generación"}</p>
+          </div>
+          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">
+            {statusNames[order.estado] ?? order.estado.replaceAll("_", " ")}
+          </span>
+        </div>
+        <div className="mt-5 flex flex-wrap gap-2 border-t border-slate-100 pt-5">
+          {!order.numeroTracking && <Button size="sm" disabled={workingId !== null} onClick={() => void perform(order.id, async () => {
+            const response = await api.activateTracking(order.id, token!);
+            return `Tracking ${response.numeroTracking} activado.`;
+          })}><PackageCheck className="size-4"/> Activar tracking</Button>}
+          {order.numeroTracking && <Button size="sm" variant="outline" disabled={workingId !== null} onClick={() => void perform(order.id, async () => {
+            downloadPdf(await api.generateLabel(order.id, token!));
+            return "Etiqueta PDF generada.";
+          })}><Download className="size-4"/> Descargar etiqueta</Button>}
+          {order.estado === "CREADO" && <Button size="sm" variant="outline" disabled={workingId !== null} onClick={() => void perform(order.id, async () => {
+            await api.setLogisticsState(order.id, "RECIBIDO_EN_ORIGEN", token!);
+            return "Recepción en origen registrada.";
+          })}><Truck className="size-4"/> Recibido en origen</Button>}
+          {order.estado === "RECIBIDO_EN_ORIGEN" && <Button size="sm" variant="outline" disabled={workingId !== null} onClick={() => void perform(order.id, async () => {
+            await api.setLogisticsState(order.id, "EN_TRANSITO", token!);
+            return "Tránsito registrado. El envío está disponible para asignación.";
+          })}><Truck className="size-4"/> Pasar a tránsito</Button>}
+        </div>
+      </article>)}
+    </div>
+  </div>;
+}
+
+function Summary({ label, value }: { label: string; value: number }) {
+  return <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+    <p className="text-xs font-medium text-slate-500">{label}</p>
+    <p className="mt-2 text-2xl font-semibold tabular-nums text-slate-900">{value}</p>
+  </div>;
 }

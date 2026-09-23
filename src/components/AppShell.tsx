@@ -11,6 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
+import { SessionIdleGuard } from "./SessionIdleGuard";
 import type { Role } from "@/types/api";
 import { useState } from "react";
 
@@ -30,7 +31,7 @@ const navItems: Array<{
     label: "Pedidos",
     to: "/panel/pedidos",
     icon: ClipboardList,
-    roles: ["OPERADOR"],
+    roles: ["CLIENTE", "OPERADOR"],
   },
   {
     label: "Envíos",
@@ -60,6 +61,7 @@ export function AppShell() {
 
   return (
     <div className="min-h-screen bg-[#f4f7f5] text-slate-950">
+      <SessionIdleGuard />
       <button
         type="button"
         className="fixed right-4 top-4 z-50 rounded-lg bg-slate-950 p-2 text-white shadow-lg md:hidden"
