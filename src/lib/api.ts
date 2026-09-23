@@ -112,7 +112,7 @@ export const api = {
   reassignRouteOrder: (pedidoId: number, nuevoConductorId: number, motivo: string, token: string) => request<RouteResponse>("/rutas/asignaciones/reasignar", { method: "PUT", body: JSON.stringify({ pedidoId, nuevoConductorId, motivo }) }, token),
 
   adminUsers: (dbaKey: string) => request<UserResponse[]>("/admin/usuarios", {}, undefined, { "X-DBA-Key": dbaKey }),
-  adminChangeRole: (id: number, body: { rol: "OPERADOR" | "CONDUCTOR"; licencia?: string; codigoEmpleado?: string }, dbaKey: string) => request<UserResponse>(`/admin/usuarios/${id}/rol`, { method: "PATCH", body: JSON.stringify(body) }, undefined, { "X-DBA-Key": dbaKey }),
+  adminChangeRole: (id: number, body: { rol: "CLIENTE" | "OPERADOR" | "CONDUCTOR"; licencia?: string; codigoEmpleado?: string }, dbaKey: string) => request<UserResponse>(`/admin/usuarios/${id}/rol`, { method: "PATCH", body: JSON.stringify(body) }, undefined, { "X-DBA-Key": dbaKey }),
 };
 
 export function getApiError(error: unknown, fallback = "Ocurrió un error inesperado.") {
