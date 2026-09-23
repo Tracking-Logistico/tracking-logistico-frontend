@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { useAuthStore } from "@/stores/authStore";
 
-/** El servidor valida los mismos límites; este guard cierra también la UI inactiva. */
 export function SessionIdleGuard() {
   const token = useAuthStore((state) => state.accessToken);
   const role = useAuthStore((state) => state.role);

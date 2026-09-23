@@ -1,41 +1,34 @@
-# LogisTrack — Frontend
+# Tracking Logístico — Frontend
 
-Frontend React/Vite. Se integra con la API por `VITE_API_URL` y presenta flujos separados para Cliente, Operador y Conductor.
+Frontend React y Vite. Es un repositorio independiente del backend; se comunican mediante la API HTTP.
 
-## Docker con PostgreSQL y API
-
-Extraiga ambos ZIP en la misma carpeta padre y ejecute desde el backend:
-
-```bash
-cd tracking-logistico-backend-main
-docker compose up --build
-```
-
-Frontend: http://localhost:5173. API: http://localhost:8080. Bandeja de correos de prueba: http://localhost:8025.
-
-## Desarrollo sin Docker para el frontend
+## Ejecución local
 
 ```bash
 npm ci
 npm run dev
 ```
 
-Copie `.env.example` como `.env` si necesita fijar la URL del backend: `VITE_API_URL=http://localhost:8080/api/v1`.
+Abre http://localhost:5173. Si no se define `VITE_API_URL`, la aplicación apunta a `http://localhost:8080/api/v1`. Puedes copiar `.env.example` a `.env` y cambiar la URL para tus pruebas privadas. Los archivos `.env`, `.env.local`, `.env.production` y demás variantes de entorno no se suben a GitHub. `.env.example` contiene únicamente localhost y sí se versiona.
+
+## Docker con ambos repositorios independientes
+
+Con ambas carpetas `tracking-logistico-backend-main` y `tracking-logistico-frontend-main` en el mismo directorio padre:
+
+```bash
+cd tracking-logistico-backend-main
+docker compose up --build
+```
+
+Abre http://localhost:5173. Docker Compose envía `VITE_API_URL=http://localhost:8080/api/v1` al servidor de desarrollo y activa PostgreSQL solo en el backend Docker. Si ejecutas Java localmente, el backend usa H2; si ejecutas Docker Compose, usa PostgreSQL.
 
 ## Netlify
 
-Configure en el build `VITE_API_URL` con la URL pública del servicio de Render terminada en `/api/v1`. En local Docker usa el servidor Vite; Netlify usa el build `npm run build`. Los textos de términos y política incluidos en este bloque son demostrativos: la entidad responsable debe aprobar los documentos definitivos antes de aceptar registros reales.
+Configura `VITE_API_URL` en las variables de entorno del sitio Netlify con la URL **existente** del backend Render terminada en `/api/v1`. La URL de producción ya no está escrita en el código ni en archivos versionados: Vite incorpora la variable en el momento de `npm run build`, por lo que debes confirmar que esté definida antes de publicar una nueva versión. No copies tu `.env` local al repositorio ni al build de producción.
 
-## Bloque 3 — panel de rutas
+```bash
+npm run build
+npm run lint
+```
 
-El operador puede seleccionar varios pedidos, comparar ocupación real de los conductores y reasignar una parada con motivo e historial; el conductor ve su propia ruta con dirección/destinatario/prioridad y avisos internos leídos o pendientes. No se ingresan IDs técnicos a mano. Requiere backend bloque 3 (migración Flyway V13). Las credenciales y el despliegue Docker siguen siendo los del bloque anterior.
-
-## Bloque 4
-
-- El panel ahora usa destinos reales por rol (`/panel/cliente`, `/panel/operador`, `/panel/conductor`).
-- Renovación automática de sesión ante HTTP 401, con control de solicitudes simultáneas y un solo reintento. Si el refresh falla, cierra la sesión.
-- Cierre local por inactividad a los 30 minutos para Cliente y 15 minutos para roles internos; backend mantiene la validación de autoridad.
-- Despachos conserva pedidos al pasar por `CREADO`, `RECIBIDO_EN_ORIGEN` y `EN_TRANSITO`, con seguimiento y PDF de etiqueta.
-- En localhost y sin `VITE_API_URL`, la API apunta a `localhost:8080`, no a producción. En Netlify configura `VITE_API_URL` para el backend público con `/api/v1`.
-
-Este ZIP sustituye por completo el frontend del bloque 3, sin requerir cambios en las contraseñas actuales de Docker ni Render.
+El backend debe permitir el origen público del frontend mediante `CORS_ALLOWED_ORIGIN`. Los módulos conservan sus endpoints, permisos y pantallas existentes.

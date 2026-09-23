@@ -1,11 +1,6 @@
 import type { ApiErrorShape, ClientResponse, DriverResponse, LabelResponse, LoginResponse, OrderResponse, OrderEvent, ReceiveOrderPayload, RegisterPayload, RouteResponse, RouteNotification, AssignmentEvent, UserResponse, ValidateOrderPayload } from "@/types/api";
 
-// Si el frontend se abre fuera de Docker en localhost, no llamar por accidente
-// a la BD de producción. Netlify usa VITE_API_URL o el servicio Render.
-const DEFAULT_API_URL = /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname)
-  ? "http://localhost:8080/api/v1"
-  : "https://tracking-logistico-backend.onrender.com/api/v1";
-const API_URL = (import.meta.env.VITE_API_URL || DEFAULT_API_URL).replace(/\/$/, "");
+const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:8080/api/v1").replace(/\/$/, "");
 
 async function parseResponse<T>(response: Response): Promise<T> {
   const contentType = response.headers.get("content-type") ?? "";
@@ -20,8 +15,6 @@ async function parseResponse<T>(response: Response): Promise<T> {
   return body as T;
 }
 
-// Una sola renovación en vuelo para que las solicitudes simultáneas no consuman
-// el mismo refresh token varias veces. El backend rota la sesión al renovar.
 let refreshInFlight: Promise<string> | null = null;
 
 async function renewAccessToken(rejectedToken: string): Promise<string> {
@@ -38,7 +31,7 @@ async function renewAccessToken(rejectedToken: string): Promise<string> {
           body: JSON.stringify({ refreshToken: originalRefresh }),
         });
         const session = await parseResponse<LoginResponse>(response);
-        // No sustituir una sesión nueva por una respuesta de renovación antigua.
+
         if (useAuthStore.getState().refreshToken === originalRefresh) {
           useAuthStore.getState().applySession(session);
         }
@@ -66,7 +59,7 @@ async function request<T>(path: string, init: RequestInit = {}, token?: string, 
       headers.set("Authorization", `Bearer ${replacement}`);
       response = await fetch(`${API_URL}${path}`, { ...init, headers });
     } catch {
-      // Retornar el error original (401); el estado de autenticación ya se limpió.
+
     }
   }
   return parseResponse<T>(response);
