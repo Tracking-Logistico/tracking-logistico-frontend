@@ -12,7 +12,7 @@ export function VerifyPage() {
     token ? "loading" : "error",
   );
   const [message, setMessage] = useState(
-    token ? "" : "El enlace de verificación no contiene un token válido.",
+    token ? "" : "El enlace de verificación no contiene un token válido. Puedes iniciar sesión sin verificar tu correo.",
   );
   const verifiedTokenRef = useRef<string | null>(null);
   useEffect(() => {
@@ -26,7 +26,7 @@ export function VerifyPage() {
       })
       .catch((error: unknown) => {
         setState("error");
-        setMessage(getApiError(error, "El enlace no es válido o ya expiró."));
+        setMessage(`${getApiError(error, "El enlace no es válido o ya expiró.")} Puedes iniciar sesión sin verificar tu correo.`);
       });
   }, [token]);
   return (

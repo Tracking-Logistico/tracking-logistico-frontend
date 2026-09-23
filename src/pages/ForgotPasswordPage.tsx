@@ -37,7 +37,7 @@ export function ForgotPasswordPage() {
         </div>
         <h1 className="mt-7 text-3xl font-semibold">Recuperar contraseña</h1>
         <p className="mt-3 text-sm leading-6 text-slate-500">
-          Te enviaremos instrucciones al correo asociado a tu cuenta.
+          Intentaremos enviar instrucciones al correo asociado a tu cuenta si el servicio de correo está disponible.
         </p>
         <form className="mt-8 space-y-5" onSubmit={submit}>
           <FormField
