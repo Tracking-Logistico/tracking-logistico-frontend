@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowUpRight, Package2 } from "lucide-react";
 import { gsap } from "gsap";
-import { buttonVariants } from "./ui/buttonVariants";
+import { buttonVariants } from "@/components/ui/buttonVariants";
 import { cn } from "@/lib/utils";
 
 export function Navbar() {

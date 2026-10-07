@@ -9,7 +9,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { FormField } from "@/components/FormField";
+import { FormField } from "@/components/shared/FormField";
 import { useAuthStore } from "@/stores/authStore";
 import { getApiError } from "@/lib/api";
 import { usePageMeta } from "@/hooks/usePageMeta";
