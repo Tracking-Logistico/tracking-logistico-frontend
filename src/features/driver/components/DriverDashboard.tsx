@@ -1,13 +1,14 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { MapPin, Navigation, RefreshCw, Wifi, WifiOff } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { api, getApiError } from "@/lib/api";
 import { useAuthStore } from "@/stores/authStore";
 import { useOfflineDeliveryQueue } from "@/features/driver/hooks/useOfflineDeliveryQueue";
+import { DriverDeliveryDetail } from "@/features/driver/components/DriverDeliveryDetail";
+import { DriverDeliveryList } from "@/features/driver/components/DriverDeliveryList";
 import type { DeliveryEvent, DeliveryResult, DriverDelivery, DriverProgress, DriverRoute, NoveltyOption } from "@/types/api";
 
 const resultLabels: Record<DeliveryResult, string> = {
@@ -15,12 +16,6 @@ const resultLabels: Record<DeliveryResult, string> = {
   ENTREGA_FALLIDA: "Entrega fallida",
   DEVOLUCION_AL_REMITENTE: "Devolución al remitente",
 };
-
-function deliveryBadge(state: string) {
-  if (state === "ENTREGADO") return "border-emerald-200 bg-emerald-50 text-emerald-800";
-  if (state === "FALLIDA" || state === "DEVOLUCION_AL_REMITENTE") return "border-rose-200 bg-rose-50 text-rose-800";
-  return "border-amber-200 bg-amber-50 text-amber-800";
-}
 
 export function DriverDashboard() {
   const token = useAuthStore(state => state.accessToken);
@@ -36,6 +31,7 @@ export function DriverDashboard() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [tab, setTab] = useState<"pending" | "completed">("pending");
+  const catalogLoaded = useRef(false);
   const offline = useOfflineDeliveryQueue();
 
   const refresh = useCallback(async () => {
@@ -47,12 +43,15 @@ export function DriverDashboard() {
         api.driverDeliveries(token),
         api.driverProgress(token),
         api.driverRoute(token),
-        api.driverNoveltyCatalog(token),
+        catalogLoaded.current ? Promise.resolve(catalog) : api.driverNoveltyCatalog(token),
       ]);
       setDeliveries(nextDeliveries);
       setProgress(nextProgress);
       setRoute(nextRoute);
-      setCatalog(nextCatalog);
+      if (!catalogLoaded.current) {
+        setCatalog(nextCatalog);
+        catalogLoaded.current = true;
+      }
     } catch (e) {
       setError(getApiError(e, "No fue posible cargar tu jornada."));
     } finally {
@@ -67,8 +66,6 @@ export function DriverDashboard() {
     return () => window.removeEventListener("logistrack-driver-refresh", listener);
   }, [refresh]);
 
-  const pending = useMemo(() => deliveries.filter(item => item.estadoParada === "PENDIENTE"), [deliveries]);
-  const completed = useMemo(() => deliveries.filter(item => item.estadoParada !== "PENDIENTE"), [deliveries]);
   const availableNovelties = catalog.filter(item => item.resultado === result);
   const percentage = progress && progress.totalEntregas ? Math.round((progress.entregadas / progress.totalEntregas) * 100) : 0;
 
@@ -175,24 +172,14 @@ export function DriverDashboard() {
       </Card>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1.3fr_1fr]">
-        <section>
-          <div className="flex gap-2 border-b border-slate-200">
-            <button className={`px-4 py-3 text-sm font-semibold ${tab === "pending" ? "border-b-2 border-emerald-600 text-emerald-700" : "text-slate-500"}`} onClick={() => setTab("pending")}>Pendientes ({pending.length})</button>
-            <button className={`px-4 py-3 text-sm font-semibold ${tab === "completed" ? "border-b-2 border-emerald-600 text-emerald-700" : "text-slate-500"}`} onClick={() => setTab("completed")}>Completadas ({completed.length})</button>
-          </div>
-          <div className="mt-4 grid gap-3">
-            {(tab === "pending" ? pending : completed).map(delivery => (
-              <Card key={delivery.pedidoId}>
-                <CardContent className="gap-2 pt-6">
-                  <div className="flex flex-wrap items-start justify-between gap-2"><div><p className="font-semibold">#{delivery.numeroPedido}</p><p className="text-xs text-slate-500">{delivery.numeroTracking}</p></div><Badge className={deliveryBadge(delivery.estadoParada)}>{delivery.estadoParada}</Badge></div>
-                  <p className="text-sm">{delivery.destinatarioNombre}</p><p className="text-sm text-slate-600">{delivery.direccionDestino}, {delivery.ciudadDestino}</p>
-                  {delivery.estadoParada === "PENDIENTE" && <Button className="mt-2 w-full sm:w-auto" onClick={() => openResult(delivery)}>Registrar resultado</Button>}
-                </CardContent>
-              </Card>
-            ))}
-            {!loading && !(tab === "pending" ? pending : completed).length && <p className="rounded-xl border border-dashed p-6 text-center text-sm text-slate-500">No hay entregas en esta sección.</p>}
-          </div>
-        </section>
+        <DriverDeliveryList
+          deliveries={deliveries}
+          loading={loading}
+          tab={tab}
+          onTabChange={setTab}
+          onSelect={setSelected}
+          onRegister={openResult}
+        />
 
         <section>
           <Card>
@@ -203,6 +190,9 @@ export function DriverDashboard() {
               {!route?.paradas.length && <p className="text-sm text-slate-500">No hay paradas pendientes en la ruta.</p>}
             </CardContent>
           </Card>
+          <div className="mt-6">
+            <DriverDeliveryDetail delivery={selected} onRegister={openResult} />
+          </div>
         </section>
       </div>
 
