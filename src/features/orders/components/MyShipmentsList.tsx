@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Link } from "react-router-dom";
 import type { MyOrderResponse } from "@/types/api";
 
 const statusLabels: Record<string, string> = {
@@ -21,7 +22,7 @@ function StatusBadge({ value }: { value: string }) {
 export function MyShipmentsList({ shipments, loading, onCorrect }: { shipments: MyOrderResponse[]; loading: boolean; onCorrect: (id: number) => void }) {
   if (loading) return <div className="space-y-3" aria-label="Cargando envíos">{[1, 2, 3].map((item) => <Skeleton key={item} className="h-32 w-full rounded-2xl" />)}</div>;
   return <div className="space-y-3">{shipments.map((shipment) => <Card key={shipment.id}><CardContent className="grid gap-4 p-5 sm:grid-cols-[1fr_auto] sm:items-center">
-    <div><p className="font-mono text-sm font-semibold">{shipment.numeroPedido}</p><p className="mt-2 text-sm text-slate-700"><span className="font-medium">Remitente:</span> {shipment.remitenteNombre}</p><p className="mt-1 text-sm text-slate-700"><span className="font-medium">Destinatario:</span> {shipment.destinatarioNombre}</p>{shipment.numeroTracking && <p className="mt-1 font-mono text-xs text-slate-500">Tracking: {shipment.numeroTracking}</p>}</div>
+    <div><p className="font-mono text-sm font-semibold">{shipment.numeroPedido}</p><p className="mt-2 text-sm text-slate-700"><span className="font-medium">Remitente:</span> {shipment.remitenteNombre}</p><p className="mt-1 text-sm text-slate-700"><span className="font-medium">Destinatario:</span> {shipment.destinatarioNombre}</p>{shipment.numeroTracking && <Link to={`/panel/pedidos/seguimiento/${encodeURIComponent(shipment.numeroTracking)}`} className="mt-2 inline-flex min-h-11 items-center rounded-md px-2 py-1 font-mono text-sm font-semibold text-emerald-700 underline decoration-emerald-300 underline-offset-4 transition hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600">Ver seguimiento: {shipment.numeroTracking}</Link>}</div>
     <div className="sm:text-right"><StatusBadge value={shipment.estado} /><p className="mt-2 text-sm text-slate-600">Entrega estimada: <span className="font-medium text-slate-800">{formatDate(shipment.fechaEstimadaEntrega)}</span></p><p className="mt-1 text-xs text-slate-500">Creado: {formatDate(shipment.fechaCreacion)}</p>{shipment.estado === "CORRECCION_SOLICITADA" && <Button className="mt-3" size="sm" variant="outline" onClick={() => onCorrect(shipment.id)}>Corregir información</Button>}</div>
   </CardContent></Card>)}</div>;
 }

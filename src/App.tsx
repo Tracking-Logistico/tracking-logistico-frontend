@@ -15,6 +15,7 @@ import { SettingsPage } from "./pages/SettingsPage";
 import { OrdersPage } from "./pages/OrdersPage";
 import { ShipmentsPage } from "./pages/ShipmentsPage";
 import { RoutesPage } from "./pages/RoutesPage";
+import { ShipmentTrackingPage } from "./pages/ShipmentTrackingPage";
 import { DriverDashboard } from "./features/driver/components/DriverDashboard";
 
 import { Toaster } from "@/components/ui/sonner";
@@ -52,6 +53,9 @@ export default function App() {
             <Route path="/panel/configuracion" element={<SettingsPage />} />
             <Route element={<ProtectedRoute roles={["CLIENTE", "OPERADOR"]} />}>
               <Route path="/panel/pedidos" element={<OrdersPage />} />
+            </Route>
+            <Route element={<ProtectedRoute roles={["CLIENTE"]} />}>
+              <Route path="/panel/pedidos/seguimiento/:numeroTracking" element={<ShipmentTrackingPage />} />
             </Route>
             <Route element={<ProtectedRoute roles={["OPERADOR"]} />}>
               <Route path="/panel/envios" element={<ShipmentsPage />} />

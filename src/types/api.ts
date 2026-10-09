@@ -101,6 +101,30 @@ export interface MyOrderResponse {
   fechaEstimadaEntrega?: string;
 }
 
+export interface ShipmentTrackingMovement {
+  estado?: OrderStatus;
+  fecha: string;
+  tipo: "ESTADO" | "PUNTO_CONTROL" | "NOVEDAD";
+  descripcion: string;
+}
+
+export interface ShipmentTrackingResponse {
+  id: number;
+  numeroPedido: string;
+  numeroTracking: string;
+  estado: OrderStatus;
+  fechaEstimadaEntrega?: string;
+  movimientos: ShipmentTrackingMovement[];
+  descripcionEstado: string;
+  novedad?: {
+    titulo: string;
+    mensaje: string;
+    fecha: string;
+  };
+  fechaEntregaReprogramada?: string;
+  fechaLimiteVerificacionDireccion?: string;
+}
+
 export interface PageResponse<T> {
   content: T[];
   totalPages: number;

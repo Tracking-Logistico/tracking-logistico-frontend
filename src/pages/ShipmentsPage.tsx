@@ -47,7 +47,10 @@ export function ShipmentsPage() {
     }
   }, [token]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timer);
+  }, [load]);
 
   async function perform(id: number, action: () => Promise<string>) {
     if (workingId !== null) return;
