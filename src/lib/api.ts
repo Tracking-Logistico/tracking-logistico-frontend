@@ -1,4 +1,4 @@
-import type { ApiErrorShape, ClientResponse, DriverResponse, LabelResponse, LoginResponse, OrderResponse, OrderEvent, ReceiveOrderPayload, RegisterPayload, RouteResponse, RouteNotification, AssignmentEvent, UserResponse, ValidateOrderPayload, DriverProgress, DriverDelivery, DriverDeliveryDetail, NextStop, DriverRoute, NoveltyOption, DeliveryEvent, DeliveryResultResponse, OfflineDeliveryEvent, SyncResponse } from "@/types/api";
+import type { ApiErrorShape, ClientResponse, DriverResponse, LabelResponse, LoginResponse, OrderResponse, OrderEvent, ReceiveOrderPayload, RegisterPayload, RouteResponse, RouteNotification, AssignmentEvent, UserResponse, ValidateOrderPayload, DriverProgress, DriverDelivery, DriverDeliveryDetail, NextStop, DriverRoute, NoveltyOption, DeliveryEvent, DeliveryResultResponse, OfflineDeliveryEvent, SyncResponse, MyOrderResponse, PageResponse, OrderStatus } from "@/types/api";
 
 const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:8080/api/v1").replace(/\/$/, "");
 
@@ -81,8 +81,19 @@ export const api = {
 
   createOrder: (payload: ReceiveOrderPayload, token: string) => request<OrderResponse>("/pedidos", { method: "POST", body: JSON.stringify(payload) }, token),
   correctOrder: (id: number, payload: ReceiveOrderPayload, token: string) => request<OrderResponse>(`/pedidos/${id}/corregir`, { method: "PUT", body: JSON.stringify(payload) }, token),
+  getOrder: (id: number, token: string) => request<OrderResponse>(`/pedidos/${id}`, {}, token),
   orderHistory: (id: number, token: string) => request<OrderEvent[]>(`/pedidos/${id}/historial`, {}, token),
-  myOrders: (token: string) => request<OrderResponse[]>("/pedidos/mios", {}, token),
+  myOrders: (params: { page: number; size: number; sort: "fechaCreacion" | "estado"; direction: "asc" | "desc"; estado?: OrderStatus; fechaDesde?: string; fechaHasta?: string }, token: string) => {
+    const query = new URLSearchParams({
+      page: String(params.page),
+      size: String(params.size),
+      sort: `${params.sort},${params.direction}`,
+    });
+    if (params.estado) query.set("estado", params.estado);
+    if (params.fechaDesde) query.set("fechaDesde", params.fechaDesde);
+    if (params.fechaHasta) query.set("fechaHasta", params.fechaHasta);
+    return request<PageResponse<MyOrderResponse>>(`/pedidos/mios?${query.toString()}`, {}, token);
+  },
   listPendingOrders: (token: string) => request<OrderResponse[]>("/pedidos/pendientes", {}, token),
   listActivableOrders: (token: string) => request<OrderResponse[]>("/pedidos/activables", {}, token),
   listDispatchOrders: (token: string) => request<OrderResponse[]>("/pedidos/despachos", {}, token),

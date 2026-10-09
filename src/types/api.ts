@@ -90,6 +90,27 @@ export interface OrderResponse extends ReceiveOrderPayload {
   remitenteEmail?: string;
 }
 
+export interface MyOrderResponse {
+  id: number;
+  numeroPedido: string;
+  numeroTracking?: string;
+  remitenteNombre: string;
+  destinatarioNombre: string;
+  estado: OrderStatus;
+  fechaCreacion: string;
+  fechaEstimadaEntrega?: string;
+}
+
+export interface PageResponse<T> {
+  content: T[];
+  totalPages: number;
+  totalElements: number;
+  size: number;
+  number: number;
+  first: boolean;
+  last: boolean;
+}
+
 export interface OrderEvent { id: number; usuarioId?: number; tipoEvento: string; campoObservado?: string; detalle?: string; fecha: string; }
 export interface LabelResponse { numeroPedido: string; numeroTracking: string; contenido: string; fechaImpresion: string; }
 export interface RouteStop {

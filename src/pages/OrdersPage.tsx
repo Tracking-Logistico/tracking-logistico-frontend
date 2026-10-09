@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/shared/FormField";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { RequestShipmentDialog } from "@/features/orders/components/RequestShipmentDialog";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { OrderHistory } from "@/features/orders/components/OrderHistory";
+import { MyShipmentsFilters } from "@/features/orders/components/MyShipmentsFilters";
+import { MyShipmentsList } from "@/features/orders/components/MyShipmentsList";
+import { useMyShipments } from "@/features/orders/hooks/useMyShipments";
 import { api, getApiError } from "@/lib/api";
 import { useAuthStore } from "@/stores/authStore";
 import { usePageMeta } from "@/hooks/usePageMeta";
@@ -24,40 +25,41 @@ const priorityLabels: Record<Priority, string> = { ALTA: "Alta", MEDIA: "Media",
 export function OrdersPage() { const role = useAuthStore((s) => s.role); return role === "CLIENTE" ? <ClientOrders /> : <OperatorInbox />; }
 
 function ClientOrders() {
-  usePageMeta("Mis pedidos", "Solicita envíos y consulta su avance.");
+  usePageMeta("Mis envíos", "Consulta tus pedidos y el estado de cada envío.");
   const token = useAuthStore((s) => s.accessToken);
-  const [orders, setOrders] = useState<OrderResponse[]>([]); const [form, setForm] = useState<ReceiveOrderPayload>({ ...emptyForm });
-  const [editingId, setEditingId] = useState<number | null>(null); const [loading, setLoading] = useState(true); const [saving, setSaving] = useState(false);
+  const shipments = useMyShipments(token);
+  const [form, setForm] = useState<ReceiveOrderPayload>({ ...emptyForm });
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(""); const [error, setError] = useState(""); const [dialogOpen, setDialogOpen] = useState(false);
-  const load = useCallback(async () => { if (!token) return; setLoading(true); try { setOrders(await api.myOrders(token)); setError(""); } catch (e) { setError(getApiError(e)); } finally { setLoading(false); } }, [token]);
-  useEffect(() => { const timer = window.setTimeout(() => void load(), 0); return () => window.clearTimeout(timer); }, [load]);
   const update = <K extends keyof ReceiveOrderPayload>(key: K, value: ReceiveOrderPayload[K]) => setForm((current) => ({ ...current, [key]: value }));
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (!token || saving) return; setError(""); setMessage(""); setSaving(true);
-    try { const result = editingId !== null ? await api.correctOrder(editingId, form, token) : await api.createOrder(form, token); const successMessage = editingId !== null ? `Pedido ${result.numeroPedido} corregido y enviado a nueva validación.` : `Pedido ${result.numeroPedido} enviado a validación.`; setMessage(successMessage); toast.success(successMessage); setForm({ ...emptyForm }); setEditingId(null); setDialogOpen(false); await load(); }
+    try { const result = editingId === null ? await api.createOrder(form, token) : await api.correctOrder(editingId, form, token); const successMessage = editingId === null ? `Pedido ${result.numeroPedido} enviado a validación.` : `Pedido ${result.numeroPedido} corregido y enviado a nueva validación.`; setMessage(successMessage); toast.success(successMessage); setForm({ ...emptyForm }); setEditingId(null); setDialogOpen(false); await shipments.reload(); }
     catch (err) { const errorMessage = getApiError(err, "Revisa los datos del envío."); setError(errorMessage); toast.error(errorMessage); } finally { setSaving(false); }
   }
-  function edit(order: OrderResponse) { setEditingId(order.id); setForm({ direccionOrigen: order.direccionOrigen, ciudadOrigen: order.ciudadOrigen ?? "", codigoPostalOrigen: order.codigoPostalOrigen ?? "", direccionDestino: order.direccionDestino, ciudadDestino: order.ciudadDestino ?? "", codigoPostalDestino: order.codigoPostalDestino ?? "", remitenteTelefono: order.remitenteTelefono ?? "", descripcionPaquete: order.descripcionPaquete, pesoKg: order.pesoKg, largoCm: order.largoCm, anchoCm: order.anchoCm, altoCm: order.altoCm, tipoServicio: order.tipoServicio, destinatarioNombre: order.destinatarioNombre, destinatarioTelefono: order.destinatarioTelefono }); setDialogOpen(true); }
-  return <Page><Header eyebrow="Clientes" title="Mis pedidos" description="Solicita un envío y consulta su trazabilidad desde la solicitud hasta la entrega." onRefresh={load} onCreate={() => setDialogOpen(true)} /><Feedback error={error} message={message} />
-    <section className="mt-8"><h2 className="text-xl font-semibold">Tus envíos</h2><p className="mt-1 text-sm text-muted-foreground">Identificador, estado, prioridad e historial de cada solicitud.</p>
-      <div className="mt-4">{loading && <Loading />}{!loading && orders.length === 0 && <EmptyState onCreate={() => setDialogOpen(true)} />}{!loading && orders.length > 0 && <OrdersList orders={orders} token={token} onEdit={edit} />}</div>
+  async function edit(id: number) {
+    if (!token) return;
+    setError("");
+    try {
+      const order = await api.getOrder(id, token);
+      setEditingId(id);
+      setForm({ direccionOrigen: order.direccionOrigen, ciudadOrigen: order.ciudadOrigen ?? "", codigoPostalOrigen: order.codigoPostalOrigen ?? "", direccionDestino: order.direccionDestino, ciudadDestino: order.ciudadDestino ?? "", codigoPostalDestino: order.codigoPostalDestino ?? "", remitenteTelefono: order.remitenteTelefono ?? "", descripcionPaquete: order.descripcionPaquete, pesoKg: order.pesoKg, largoCm: order.largoCm, anchoCm: order.anchoCm, altoCm: order.altoCm, tipoServicio: order.tipoServicio, destinatarioNombre: order.destinatarioNombre, destinatarioTelefono: order.destinatarioTelefono });
+      setDialogOpen(true);
+    } catch (err) { setError(getApiError(err)); }
+  }
+  return <Page><Header eyebrow="Clientes" title="Mis envíos" description="Consulta los pedidos asociados a tu cuenta y su fecha estimada de entrega." onRefresh={shipments.reload} onCreate={() => { setEditingId(null); setForm({ ...emptyForm }); setDialogOpen(true); }} /><Feedback error={error || shipments.error} message={message} />
+    <section className="mt-8"><h2 className="text-xl font-semibold">Tus envíos</h2><p className="mt-1 text-sm text-muted-foreground">Filtra y ordena la información directamente desde el servidor.</p>
+      <div className="mt-4 space-y-4"><MyShipmentsFilters filters={shipments.filters} onChange={shipments.updateFilters} /><MyShipmentsList shipments={shipments.content} loading={shipments.loading} onCorrect={(id) => void edit(id)} />
+        {!shipments.loading && shipments.content.length === 0 && <EmptyState onCreate={() => setDialogOpen(true)} />}
+        {!shipments.loading && shipments.totalPages > 1 && <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 text-sm"><span>Página {shipments.page + 1} de {shipments.totalPages}</span><div className="flex gap-2"><Button variant="outline" disabled={shipments.first} onClick={() => shipments.setPage(shipments.page - 1)}>Anterior</Button><Button variant="outline" disabled={shipments.last} onClick={() => shipments.setPage(shipments.page + 1)}>Siguiente</Button></div></div>}
+      </div>
     </section>
     <RequestShipmentDialog open={dialogOpen} onOpenChange={setDialogOpen} form={form} update={update} submit={submit} saving={saving} editing={editingId !== null} onCancelEdit={() => { setEditingId(null); setForm({ ...emptyForm }); }} />
   </Page>;
 }
 
-function OrdersList({ orders, token, onEdit }: { orders: OrderResponse[]; token: string | null; onEdit: (order: OrderResponse) => void }) {
-  return <><div className="hidden overflow-hidden rounded-2xl border border-border bg-card shadow-sm md:block"><Table><TableHeader><TableRow><TableHead>Identificador</TableHead><TableHead>Estado</TableHead><TableHead>Prioridad</TableHead><TableHead>Destino</TableHead><TableHead>Historial</TableHead></TableRow></TableHeader><TableBody>{orders.map((order) => <OrderRow key={order.id} order={order} token={token} onEdit={onEdit} />)}</TableBody></Table></div><div className="space-y-3 md:hidden">{orders.map((order) => <OrderCard key={order.id} order={order} token={token} onEdit={onEdit} />)}</div></>;
-}
-function OrderRow({ order, token, onEdit }: { order: OrderResponse; token: string | null; onEdit: (order: OrderResponse) => void }) {
-  return <TableRow><TableCell className="font-mono font-semibold">{order.numeroPedido}</TableCell><TableCell><Status value={order.estado} /></TableCell><TableCell><PriorityBadge value={order.prioridadConfirmada ?? order.prioridadSugerida} /></TableCell><TableCell>{order.ciudadDestino || order.direccionDestino}</TableCell><TableCell><OrderHistory id={order.id} token={token} />{order.estado === "CORRECCION_SOLICITADA" && <Button size="sm" variant="outline" onClick={() => onEdit(order)}>Corregir</Button>}</TableCell></TableRow>;
-}
-function OrderCard({ order, token, onEdit }: { order: OrderResponse; token: string | null; onEdit: (order: OrderResponse) => void }) {
-  return <Card><CardContent className="p-5"><div className="flex flex-wrap items-start justify-between gap-3"><p className="font-mono font-semibold">{order.numeroPedido}</p><Status value={order.estado} /></div><p className="mt-3 text-sm text-muted-foreground">{order.ciudadDestino ? `${order.ciudadDestino} · ` : ""}{order.direccionDestino}</p><div className="mt-3"><PriorityBadge value={order.prioridadConfirmada ?? order.prioridadSugerida} /></div>{order.observacionesValidacion && <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">{order.observacionesValidacion}</p>}<div className="flex flex-wrap gap-2">{order.estado === "CORRECCION_SOLICITADA" && <Button size="sm" variant="outline" onClick={() => onEdit(order)}>Corregir información</Button>}<OrderHistory id={order.id} token={token} /></div></CardContent></Card>;
-}
 function Status({ value }: { value: string }) { const styles: Record<string, string> = { SOLICITADO: "bg-amber-100 text-amber-800 border-amber-200", CORRECCION_SOLICITADA: "bg-orange-100 text-orange-800 border-orange-200", CREADO: "bg-blue-100 text-blue-800 border-blue-200", ENTREGADO: "bg-emerald-100 text-emerald-800 border-emerald-200", RECHAZADO: "bg-rose-100 text-rose-800 border-rose-200" }; return <Badge className={styles[value] ?? "bg-slate-100 text-slate-700"}>{statusLabels[value] ?? value.replaceAll("_", " ")}</Badge>; }
-function PriorityBadge({ value }: { value: Priority }) { const styles = { ALTA: "bg-rose-100 text-rose-800 border-rose-200", MEDIA: "bg-amber-100 text-amber-800 border-amber-200", BAJA: "bg-emerald-100 text-emerald-800 border-emerald-200" }; return <Badge className={styles[value]}>{priorityLabels[value]}</Badge>; }
-
 function OperatorInbox() {
   usePageMeta("Bandeja de pedidos", "Verifica datos de despacho y prioridades.");
   const token = useAuthStore(s => s.accessToken); const [orders, setOrders] = useState<OrderResponse[]>([]); const [loading, setLoading] = useState(true); const [error, setError] = useState(""); const [message, setMessage] = useState(""); const [working, setWorking] = useState<number | null>(null); const [priority, setPriority] = useState<Record<number, Priority>>({}); const [notes, setNotes] = useState<Record<number, string>>({}); const [field, setField] = useState<Record<number, string>>({}); const [justification, setJustification] = useState<Record<number, string>>({});

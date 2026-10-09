@@ -120,7 +120,7 @@ export function AppSidebar({ role, onSignOut }: AppSidebarProps) {
                   className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-sidebar-foreground/75 transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:bg-sidebar-primary data-[active=true]:font-semibold data-[active=true]:text-sidebar-primary-foreground"
                 >
                   <Icon className="size-4 shrink-0" />
-                  <span>{label}</span>
+                  <span>{role === "CLIENTE" && to === "/panel/pedidos" ? "Mis envíos" : label}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             );
