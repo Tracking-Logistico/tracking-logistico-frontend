@@ -5,6 +5,8 @@ import { api, getApiError } from "@/lib/api";
 import { useAuthStore } from "@/stores/authStore";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import type { LabelResponse, OrderResponse } from "@/types/api";
+import { IncidentPanel } from "@/features/incidents/components/IncidentPanel";
+import { useIncidentTypes } from "@/features/incidents/hooks/useIncidents";
 
 const statusNames: Record<string, string> = {
   SOLICITADO: "Validado · listo para activar",
@@ -28,6 +30,7 @@ function downloadPdf(label: LabelResponse) {
 export function ShipmentsPage() {
   usePageMeta("Despachos", "Control de tracking, etiquetas y tránsito de envíos.");
   const token = useAuthStore((state) => state.accessToken);
+  const incidentTypes = useIncidentTypes(token);
   const [orders, setOrders] = useState<OrderResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [workingId, setWorkingId] = useState<number | null>(null);
@@ -125,6 +128,14 @@ export function ShipmentsPage() {
             return "Tránsito registrado. El envío está disponible para asignación.";
           })}><Truck className="size-4"/> Pasar a tránsito</Button>}
         </div>
+        <IncidentPanel
+          orderId={order.id}
+          token={token}
+          types={incidentTypes.types}
+          typesLoading={incidentTypes.loading}
+          typesError={incidentTypes.error}
+          onChanged={load}
+        />
       </article>)}
     </div>
   </div>;

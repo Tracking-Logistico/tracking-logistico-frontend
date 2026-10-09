@@ -27,6 +27,10 @@ import type {
   PageResponse,
   OrderStatus,
   ShipmentTrackingResponse,
+  IncidentType,
+  IncidentsResponse,
+  RegisterIncidentPayload,
+  RegisterIncidentResponse,
 } from "@/types/api";
 
 const API_URL = (
@@ -117,7 +121,9 @@ async function request<T>(
       const replacement = await renewAccessToken(token);
       headers.set("Authorization", `Bearer ${replacement}`);
       response = await fetch(`${API_URL}${path}`, { ...init, headers });
-    } catch {}
+    } catch {
+      // parseResponse below exposes the original unauthorized response when refresh fails.
+    }
   }
   return parseResponse<T>(response);
 }
@@ -210,6 +216,20 @@ export const api = {
     request<OrderResponse>(`/pedidos/${id}`, {}, token),
   orderHistory: (id: number, token: string) =>
     request<OrderEvent[]>(`/pedidos/${id}/historial`, {}, token),
+  incidentTypes: (token: string) =>
+    request<IncidentType[]>("/pedidos/incidencias/tipos", {}, token),
+  orderIncidents: (id: number, token: string) =>
+    request<IncidentsResponse>(`/pedidos/${id}/incidencias`, {}, token),
+  registerIncident: (
+    id: number,
+    payload: RegisterIncidentPayload,
+    token: string,
+  ) =>
+    request<RegisterIncidentResponse>(
+      `/pedidos/${id}/incidencias`,
+      { method: "POST", body: JSON.stringify(payload) },
+      token,
+    ),
   myOrders: (
     params: {
       page: number;

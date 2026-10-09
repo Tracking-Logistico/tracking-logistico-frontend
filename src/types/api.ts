@@ -41,7 +41,23 @@ export interface ClientResponse {
 export interface ApiErrorShape { message: string; status: number; details?: Record<string, string>; }
 export type ServiceType = "ESTANDAR" | "EXPRESS" | "PROGRAMADO";
 export type Priority = "BAJA" | "MEDIA" | "ALTA";
-export type OrderStatus = "SOLICITADO" | "CORRECCION_SOLICITADA" | "CREADO" | "RECIBIDO_EN_ORIGEN" | "EN_TRANSITO" | "EN_REPARTO" | "ENTREGADO" | "RECHAZADO";
+export type OrderStatus =
+  | "SOLICITADO"
+  | "CORRECCION_SOLICITADA"
+  | "CREADO"
+  | "RECIBIDO_EN_ORIGEN"
+  | "EN_TRANSITO"
+  | "EN_REPARTO"
+  | "ENTREGADO"
+  | "RECHAZADO"
+  | "ENTREGA_FALLIDA"
+  | "ENTREGA_REPROGRAMADA"
+  | "DIRECCION_POR_VERIFICAR"
+  | "DEVOLUCION_AL_REMITENTE"
+  | "ENTREGA_FALLIDA_CERRADA"
+  | "RECIBIDO"
+  | "EN_VALIDACION"
+  | "VALIDADO";
 
 export interface ReceiveOrderPayload {
   direccionOrigen: string;
@@ -137,6 +153,48 @@ export interface PageResponse<T> {
 
 export interface OrderEvent { id: number; usuarioId?: number; tipoEvento: string; campoObservado?: string; detalle?: string; fecha: string; }
 export interface LabelResponse { numeroPedido: string; numeroTracking: string; contenido: string; fechaImpresion: string; }
+export interface IncidentType {
+  codigo: string;
+  descripcion: string;
+  requiereComentario: boolean;
+  estadoResultante: OrderStatus | null;
+  cuentaComoIntento: boolean;
+}
+export interface Incident {
+  id: number;
+  pedidoId: number;
+  tipo: string;
+  descripcionTipo: string;
+  comentario: string | null;
+  latitud: number | null;
+  longitud: number | null;
+  estadoAnterior: OrderStatus;
+  estadoResultante: OrderStatus | null;
+  numeroIntento: number | null;
+  reportadoPorUsuarioId: number;
+  fecha: string;
+}
+export interface IncidentsResponse {
+  pedidoId: number;
+  estado: OrderStatus;
+  versionPedido: number;
+  intentosEntregaFallidos: number;
+  incidencias: Incident[];
+}
+export interface RegisterIncidentPayload {
+  tipo: string;
+  comentario?: string;
+  latitud?: number;
+  longitud?: number;
+  precisionMetros?: number;
+  versionEsperada?: number;
+}
+export interface RegisterIncidentResponse {
+  incidencia: Incident;
+  estadoPedido: OrderStatus;
+  versionPedido: number;
+  intentosEntregaFallidos: number;
+}
 export interface RouteStop {
   id: number;
   pedidoId: number;
