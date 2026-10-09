@@ -51,7 +51,11 @@ export function ShipmentTrackingView({
 }) {
   if (loading || showSkeleton) {
     return (
-      <div className="space-y-4" aria-label="Cargando seguimiento">
+      <div
+        className="space-y-4"
+        role="status"
+        aria-label="Cargando seguimiento"
+      >
         <Skeleton className="h-36 w-full rounded-2xl" />
         <Skeleton className="h-64 w-full rounded-2xl" />
       </div>
@@ -86,12 +90,12 @@ export function ShipmentTrackingView({
           <p className="mt-1 break-all font-mono text-base font-semibold">
             {shipment.numeroTracking}
           </p>
-          <p className="mt-4 text-base font-medium text-slate-900">
+          <p className="mt-4 text-base font-medium text-foreground">
             {shipment.descripcionEstado}
           </p>
           {shipment.estado === "ENTREGA_REPROGRAMADA" &&
             shipment.fechaEntregaReprogramada && (
-              <p className="mt-2 text-sm font-medium text-emerald-700">
+              <p className="mt-2 text-sm font-medium text-primary">
                 Nueva fecha de entrega:{" "}
                 {new Date(
                   `${shipment.fechaEntregaReprogramada}T00:00:00`,
@@ -114,13 +118,13 @@ export function ShipmentTrackingView({
               Aún no hay movimientos registrados.
             </p>
           ) : (
-            <div className="space-y-5 border-l-2 border-emerald-200 pl-4">
+            <div className="space-y-5 border-l-2 border-primary/30 pl-4">
               {shipment.movimientos.map((movement, index) => (
                 <div
                   key={`${movement.fecha}-${movement.tipo}-${index}`}
                   className="relative"
                 >
-                  <span className="absolute -left-[1.65rem] top-1 size-3 rounded-full bg-emerald-600 ring-4 ring-white" />
+                  <span className="absolute -left-[1.65rem] top-1 size-3 rounded-full bg-primary ring-4 ring-card" />
                   <p className="font-medium">{movement.descripcion}</p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {formatDate(movement.fecha)}

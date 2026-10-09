@@ -32,31 +32,31 @@ export const HowItWorks = () => {
       aria-labelledby="process-title"
     >
       <div className="max-w-2xl">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-600">
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">
           Cómo funciona
         </p>
         <h2
           id="process-title"
-          className="mt-3 text-3xl font-semibold tracking-tight text-zinc-900 md:text-5xl"
+          className="mt-3 text-3xl font-semibold tracking-tight text-foreground md:text-5xl"
         >
           Del movimiento a la certeza.
         </h2>
-        <p className="mt-5 text-lg leading-8 text-zinc-600">
+        <p className="mt-5 text-lg leading-8 text-muted-foreground">
           Una experiencia directa para que el seguimiento deje de ser una
           búsqueda entre mensajes y se convierta en una decisión informada.
         </p>
       </div>
-      <div className="mt-14 grid gap-px overflow-hidden rounded-2xl border bg-zinc-200 md:grid-cols-3">
+      <div className="mt-14 grid gap-px overflow-hidden rounded-2xl border bg-muted md:grid-cols-3">
         {steps.map(({ number, title, description, icon: Icon }) => (
-          <article key={number} className="bg-white p-7 md:p-9">
+          <article key={number} className="bg-card p-7 md:p-9">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-sm text-zinc-400">{number}</span>
-              <Icon className="h-6 w-6 text-emerald-600" />
+              <span className="font-mono text-sm text-muted-foreground">{number}</span>
+              <Icon className="h-6 w-6 text-primary" />
             </div>
-            <h3 className="mt-16 text-xl font-semibold text-zinc-900">
+            <h3 className="mt-16 text-xl font-semibold text-foreground">
               {title}
             </h3>
-            <p className="mt-3 leading-7 text-zinc-600">{description}</p>
+            <p className="mt-3 leading-7 text-muted-foreground">{description}</p>
           </article>
         ))}
       </div>

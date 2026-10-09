@@ -10,6 +10,7 @@ import {
   Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { api, getApiError } from "@/lib/api";
 import { useAuthStore } from "@/stores/authStore";
 import { usePageMeta } from "@/hooks/usePageMeta";
@@ -61,16 +62,19 @@ export function RoutesPage() {
           api.listPendingRouteOrders(token),
           api.listDrivers(token),
         ]);
-        setPending(orders);
+        setPending(orders.content);
         setDrivers(activeDrivers);
         setSelectedOrders((old) =>
-          old.filter((id) => orders.some((order) => order.id === id)),
+          old.filter((id) =>
+            orders.content.some((order) => order.id === id),
+          ),
         );
         if (selectedDriver) {
           try {
             setRoute(await api.getDriverRoute(Number(selectedDriver), token));
-          } catch {
+          } catch (e) {
             setRoute(null);
+            setError(getApiError(e));
           }
         }
       } else if (role === "CONDUCTOR") {
@@ -229,9 +233,9 @@ export function RoutesPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-5 py-9 sm:px-8 lg:px-10">
-      <header className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-7">
+      <header className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-7">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[.19em] text-emerald-700">
+          <p className="text-xs font-semibold uppercase tracking-[.19em] text-primary">
             Operación logística
           </p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight">
@@ -239,7 +243,7 @@ export function RoutesPage() {
               ? "Mis entregas de hoy"
               : "Planificación de rutas"}
           </h1>
-          <p className="mt-2 text-sm text-slate-600">
+          <p className="mt-2 text-sm text-muted-foreground">
             {role === "CONDUCTOR"
               ? "Consulta tus entregas, su orden y las novedades de asignación."
               : "Selecciona envíos, comprueba la capacidad del conductor y organiza la jornada."}
@@ -257,7 +261,7 @@ export function RoutesPage() {
       {error && (
         <div
           role="alert"
-          className="mt-5 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800"
+          className="mt-5 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive"
         >
           {error}
         </div>
@@ -265,23 +269,23 @@ export function RoutesPage() {
       {message && (
         <div
           role="status"
-          className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"
+          className="mt-5 rounded-xl border border-primary/30 bg-primary/10 p-4 text-sm text-primary"
         >
           {message}
         </div>
       )}
 
       {role === "CONDUCTOR" && (
-        <section className="mt-7 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <section className="mt-7 rounded-2xl border border-border bg-card p-5 shadow-sm">
           <div className="mb-4 flex items-center gap-2">
-            <Bell className="size-5 text-emerald-700" />
+            <Bell className="size-5 text-primary" />
             <h2 className="font-semibold">Novedades de mi ruta</h2>
-            <span className="ml-auto rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800">
+            <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
               {notifications.filter((n) => !n.leida).length} sin leer
             </span>
           </div>
           {!notifications.length ? (
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-muted-foreground">
               No tienes notificaciones recientes.
             </p>
           ) : (
@@ -289,10 +293,10 @@ export function RoutesPage() {
               {notifications.map((n) => (
                 <div
                   key={n.id}
-                  className={`rounded-xl border p-3 text-sm ${n.leida ? "border-slate-100 bg-slate-50" : "border-emerald-200 bg-emerald-50"}`}
+                  className={`rounded-xl border p-3 text-sm ${n.leida ? "border-border bg-muted" : "border-primary/30 bg-primary/10"}`}
                 >
                   <p className="font-medium">{n.mensaje}</p>
-                  <p className="mt-1 text-xs text-slate-500">
+                  <p className="mt-1 text-xs text-muted-foreground">
                     Pedido #{n.pedidoId} · {formatDate(n.fecha)}
                   </p>
                   {!n.leida && (
@@ -317,37 +321,41 @@ export function RoutesPage() {
         className={`mt-7 grid gap-7 ${role === "OPERADOR" ? "lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]" : ""}`}
       >
         {role === "OPERADOR" && (
-          <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <section className="min-w-0 rounded-2xl border border-border bg-card p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <ClipboardList className="size-5 text-emerald-700" />
+                <ClipboardList className="size-5 text-primary" />
                 <h2 className="font-semibold">Pendientes de asignación</h2>
               </div>
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold">
+              <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold">
                 {pending.length}
               </span>
             </div>
-            <p className="mt-2 text-sm text-slate-500">
+            <p className="mt-2 text-sm text-muted-foreground">
               Selecciona uno o varios envíos. La operación será completa o no se
               realizará.
             </p>
             <div className="mt-5 max-h-[630px] space-y-2 overflow-y-auto pr-1">
               {loading && (
-                <p className="text-sm text-slate-500">Consultando envíos...</p>
+                <div role="status" aria-label="Cargando envíos por asignar" className="space-y-2">
+                  <Skeleton className="h-20 w-full rounded-xl" />
+                  <Skeleton className="h-20 w-full rounded-xl" />
+                </div>
               )}
               {!loading && !pending.length && (
-                <p className="rounded-xl border border-dashed p-5 text-sm text-slate-500">
+                <p className="rounded-xl border border-dashed p-5 text-sm text-muted-foreground">
                   No hay envíos por asignar.
                 </p>
               )}
               {pending.map((p) => (
                 <label
                   key={p.id}
-                  className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition ${selectedOrders.includes(p.id) ? "border-emerald-500 bg-emerald-50" : "border-slate-200 hover:border-slate-300"}`}
+                  className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition ${selectedOrders.includes(p.id) ? "border-primary bg-primary/10" : "border-border hover:border-primary/40"}`}
                 >
                   <input
                     type="checkbox"
-                    className="mt-1 accent-emerald-700"
+                    aria-label={`Seleccionar envío ${p.numeroTracking || p.numeroPedido}`}
+                    className="mt-1 accent-primary"
                     checked={selectedOrders.includes(p.id)}
                     onChange={(e) =>
                       setSelectedOrders((ids) =>
@@ -362,14 +370,14 @@ export function RoutesPage() {
                       <span className="font-mono text-sm font-semibold">
                         {p.numeroTracking || p.numeroPedido}
                       </span>
-                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-xs">
                         {p.prioridadConfirmada || p.prioridadSugerida}
                       </span>
                     </span>
-                    <span className="mt-1 block text-sm text-slate-700">
+                    <span className="mt-1 block text-sm text-foreground">
                       {p.direccionDestino} · {p.ciudadDestino}
                     </span>
-                    <span className="mt-1 block text-xs text-slate-500">
+                    <span className="mt-1 block text-xs text-muted-foreground">
                       {p.destinatarioNombre || "Destinatario no indicado"} ·{" "}
                       {p.pesoKg} kg · {p.estado.replaceAll("_", " ")}
                     </span>
@@ -377,7 +385,7 @@ export function RoutesPage() {
                 </label>
               ))}
             </div>
-            <div className="mt-5 border-t border-slate-100 pt-5">
+            <div className="mt-5 border-t border-border pt-5">
               <label htmlFor="conductor-ruta" className="text-sm font-medium">
                 Conductor disponible
               </label>
@@ -389,7 +397,7 @@ export function RoutesPage() {
                     e.target.value ? Number(e.target.value) : "",
                   )
                 }
-                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm"
+                className="mt-2 h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
               >
                 <option value="">Seleccionar conductor</option>
                 {drivers.map((d) => (
@@ -400,8 +408,8 @@ export function RoutesPage() {
                 ))}
               </select>
               {currentDriver && (
-                <div className="mt-4 space-y-3 rounded-xl bg-slate-50 p-4 text-xs">
-                  <p className="font-semibold text-slate-800">
+                <div className="mt-4 space-y-3 rounded-xl bg-muted p-4 text-xs">
+                  <p className="font-semibold text-foreground">
                     Capacidad de la jornada (incluye lo seleccionado)
                   </p>
                   {(
@@ -432,16 +440,16 @@ export function RoutesPage() {
                         <span
                           className={
                             amount > limit
-                              ? "font-semibold text-rose-600"
-                              : "text-slate-700"
+                              ? "font-semibold text-destructive"
+                              : "text-muted-foreground"
                           }
                         >
                           {Math.round(amount * 100) / 100} / {limit} {unit}
                         </span>
                       </div>
-                      <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-200">
+                      <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted-foreground/20">
                         <div
-                          className={`h-full rounded-full ${amount > limit ? "bg-rose-500" : "bg-emerald-600"}`}
+                          className={`h-full rounded-full ${amount > limit ? "bg-destructive" : "bg-primary"}`}
                           style={{ width: `${ratio(amount, limit)}%` }}
                         />
                       </div>
@@ -450,7 +458,7 @@ export function RoutesPage() {
                 </div>
               )}
               {beyondCapacity && (
-                <p role="alert" className="mt-3 text-sm text-rose-700">
+                <p role="alert" className="mt-3 text-sm text-destructive">
                   La selección supera la capacidad disponible. El servidor
                   también validará el límite.
                 </p>
@@ -473,16 +481,16 @@ export function RoutesPage() {
           </section>
         )}
 
-        <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <section className="min-w-0 rounded-2xl border border-border bg-card p-5 shadow-sm">
           <div className="flex items-center gap-2">
-            <MapPinned className="size-5 text-emerald-700" />
+            <MapPinned className="size-5 text-primary" />
             <h2 className="font-semibold">
               {role === "CONDUCTOR" ? "Ruta asignada" : "Ruta del conductor"}
             </h2>
           </div>
           {route ? (
             <>
-              <div className="mt-4 rounded-xl bg-slate-950 px-4 py-3 text-sm text-white">
+              <div className="mt-4 rounded-xl bg-sidebar px-4 py-3 text-sm text-sidebar-foreground">
                 <div className="flex justify-between">
                   <span>
                     {new Date(route.fecha + "T12:00:00").toLocaleDateString(
@@ -497,10 +505,10 @@ export function RoutesPage() {
                 {route.paradas.map((stop, i) => (
                   <li
                     key={stop.id}
-                    className="rounded-xl border border-slate-200 p-4"
+                    className="rounded-xl border border-border p-4"
                   >
                     <div className="flex items-start gap-3">
-                      <span className="grid size-9 shrink-0 place-items-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-800">
+                      <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-bold text-primary">
                         {stop.orden}
                       </span>
                       <div className="min-w-0 flex-1">
@@ -512,19 +520,19 @@ export function RoutesPage() {
                           </strong>
                           {stop.prioridad && (
                             <span
-                              className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${stop.prioridad === "ALTA" ? "bg-orange-100 text-orange-800" : "bg-slate-100 text-slate-700"}`}
+                              className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${stop.prioridad === "ALTA" ? "bg-secondary text-secondary-foreground" : "bg-muted text-muted-foreground"}`}
                             >
                               {stop.prioridad}
                             </span>
                           )}
                         </div>
-                        <p className="mt-1 text-sm font-medium text-slate-800">
+                        <p className="mt-1 text-sm font-medium text-foreground">
                           {stop.direccionDestino || "Dirección pendiente"}
                         </p>
-                        <p className="text-sm text-slate-500">
+                        <p className="text-sm text-muted-foreground">
                           {stop.ciudadDestino || ""}
                         </p>
-                        <p className="mt-2 text-xs text-slate-600">
+                        <p className="mt-2 text-xs text-muted-foreground">
                           {stop.destinatarioNombre || "Destinatario"} ·{" "}
                           {stop.destinatarioTelefono || "Sin teléfono"} ·{" "}
                           {stop.pesoKg ?? "—"} kg
@@ -554,7 +562,7 @@ export function RoutesPage() {
                       )}
                     </div>
                     {role === "OPERADOR" && (
-                      <div className="mt-3 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
+                      <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
                         <Button
                           size="sm"
                           variant="outline"
@@ -576,7 +584,7 @@ export function RoutesPage() {
                       </div>
                     )}
                     {role === "OPERADOR" && reassignId === stop.pedidoId && (
-                      <div className="mt-3 space-y-2 rounded-xl bg-slate-50 p-3">
+                      <div className="mt-3 space-y-2 rounded-xl bg-muted p-3">
                         <label
                           className="text-xs font-medium"
                           htmlFor={`nuevo-${stop.id}`}
@@ -585,7 +593,8 @@ export function RoutesPage() {
                         </label>
                         <select
                           id={`nuevo-${stop.id}`}
-                          className="h-10 w-full rounded-lg border border-slate-200 px-2 text-sm"
+                          aria-label="Seleccionar nuevo conductor"
+                          className="h-10 w-full rounded-lg border border-input bg-background px-2 text-sm"
                           value={reassignDriver}
                           onChange={(e) =>
                             setReassignDriver(
@@ -611,11 +620,12 @@ export function RoutesPage() {
                         </label>
                         <textarea
                           id={`motivo-${stop.id}`}
+                          aria-label="Motivo de reasignación"
                           value={reason}
                           maxLength={500}
                           onChange={(e) => setReason(e.target.value)}
                           placeholder="Ej. avería del vehículo"
-                          className="w-full rounded-lg border border-slate-200 p-2 text-sm"
+                          className="w-full rounded-lg border border-input bg-background p-2 text-sm"
                         />
                         <div className="flex gap-2">
                           <Button
@@ -636,12 +646,12 @@ export function RoutesPage() {
                       </div>
                     )}
                     {role === "OPERADOR" && historyOrder === stop.pedidoId && (
-                      <div className="mt-3 rounded-xl bg-slate-50 p-3 text-xs">
+                      <div className="mt-3 rounded-xl bg-muted p-3 text-xs">
                         <h3 className="font-semibold">
                           Historial de asignaciones
                         </h3>
                         {!history.length && (
-                          <p className="mt-2 text-slate-500">Sin registros.</p>
+                          <p className="mt-2 text-muted-foreground">Sin registros.</p>
                         )}
                         {history.map((h) => (
                           <p key={h.id} className="mt-2 border-t pt-2">
@@ -660,15 +670,15 @@ export function RoutesPage() {
                 ))}
               </ol>
               {!route.paradas.length && (
-                <p className="mt-5 text-sm text-slate-500">
+                <p className="mt-5 text-sm text-muted-foreground">
                   Tu ruta existe, pero no tiene entregas pendientes.
                 </p>
               )}
             </>
           ) : (
-            <div className="mt-5 rounded-xl border border-dashed border-slate-200 p-7 text-center">
-              <RouteIcon className="mx-auto size-7 text-slate-400" />
-              <p className="mt-3 text-sm text-slate-500">
+            <div className="mt-5 rounded-xl border border-dashed border-border p-7 text-center">
+              <RouteIcon className="mx-auto size-7 text-muted-foreground" />
+              <p className="mt-3 text-sm text-muted-foreground">
                 {loading
                   ? "Consultando ruta..."
                   : role === "CONDUCTOR"

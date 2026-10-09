@@ -339,7 +339,13 @@ export interface DriverDeliveryDetail extends DriverDelivery {
   altoCm: number | null;
   observacionesValidacion: string | null;
   fechaEntregaReprogramada: string | null;
-  ultimosEventos: OrderEvent[];
+  ultimosEventos: DriverHistoryEvent[];
+}
+
+export interface DriverHistoryEvent {
+  tipoEvento: string;
+  detalle: string | null;
+  fecha: string;
 }
 
 export interface NextStop {

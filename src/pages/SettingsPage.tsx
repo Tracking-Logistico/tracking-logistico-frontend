@@ -58,7 +58,11 @@ export function SettingsPage() {
             direccion: profileResponse.direccion ?? "",
           }),
         )
-        .catch(() => undefined);
+        .catch((error: unknown) => {
+          toast.error(
+            getApiError(error, "No fue posible cargar tus datos personales."),
+          );
+        });
     }
   }, [role, accessToken, requiresPasswordChange]);
 
@@ -152,7 +156,7 @@ export function SettingsPage() {
             <ProfileSummary
               profile={profile}
               role={role}
-              onEdit={() => setProfileDialogOpen(true)}
+              onEdit={role === "CLIENTE" ? () => setProfileDialogOpen(true) : undefined}
             />
           </div>
           {role === "CLIENTE" && (
@@ -195,14 +199,16 @@ export function SettingsPage() {
         </>
       )}
 
-      <EditProfileDialog
-        open={profileDialogOpen}
-        onOpenChange={setProfileDialogOpen}
-        profile={profile}
-        onChange={setProfile}
-        onSubmit={saveProfile}
-        loading={loading}
-      />
+      {role === "CLIENTE" && (
+        <EditProfileDialog
+          open={profileDialogOpen}
+          onOpenChange={setProfileDialogOpen}
+          profile={profile}
+          onChange={setProfile}
+          onSubmit={saveProfile}
+          loading={loading}
+        />
+      )}
       <ChangePasswordDialog
         open={passwordDialogOpen}
         onOpenChange={setPasswordDialogOpen}

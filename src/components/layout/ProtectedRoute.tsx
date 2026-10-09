@@ -13,7 +13,7 @@ export function ProtectedRoute({ roles }: ProtectedRouteProps) {
 
   if (!isHydrated) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950 text-sm text-slate-300">
+      <div className="flex min-h-screen items-center justify-center bg-sidebar text-sm text-sidebar-foreground">
         Cargando sesión...
       </div>
     );

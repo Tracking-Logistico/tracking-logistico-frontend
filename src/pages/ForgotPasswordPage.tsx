@@ -33,7 +33,7 @@ export function ForgotPasswordPage() {
     <main className="grid min-h-[calc(100vh-4.5rem)] place-items-center bg-[#f4f7f5] px-5">
       <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-9">
         <div className="grid size-11 place-items-center rounded-lg bg-emerald-100 text-emerald-700">
-          <Mail className="size-5" />
+          <Mail className="size-5" aria-hidden="true" />
         </div>
         <h1 className="mt-7 text-3xl font-semibold">Recuperar contraseña</h1>
         <p className="mt-3 text-sm leading-6 text-slate-500">
@@ -73,7 +73,7 @@ export function ForgotPasswordPage() {
           to="/login"
           className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-950"
         >
-          <ArrowLeft className="size-4" />
+          <ArrowLeft className="size-4" aria-hidden="true" />
           Volver al inicio de sesión
         </Link>
       </div>

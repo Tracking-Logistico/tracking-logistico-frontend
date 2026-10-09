@@ -27,7 +27,11 @@ export function FormInputField({
     <div className="space-y-2">
       <Label htmlFor={inputId} className="text-sm font-medium text-slate-800">
         {label}
-        {props.required && <span className="ml-1 text-rose-500">*</span>}
+        {props.required && (
+          <span className="ml-1 text-rose-500" aria-hidden="true">
+            *
+          </span>
+        )}
       </Label>
       <div className="relative">
         <Input

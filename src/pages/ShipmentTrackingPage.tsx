@@ -29,7 +29,7 @@ export function ShipmentTrackingPage() {
         <ArrowLeft className="size-4" /> Volver a Mis envíos
       </Button>
       <header className="mb-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
           Mis envíos
         </p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight">

@@ -19,15 +19,18 @@ export function AppShell() {
   };
 
   return (
-    <SidebarProvider open className="min-h-screen bg-[#f4f7f5] text-slate-950">
+    <SidebarProvider
+      open
+      className="min-h-screen bg-background text-foreground"
+    >
       <SessionIdleGuard />
       <AppSidebar role={role} onSignOut={handleSignOut} />
-      <SidebarInset className="min-h-screen bg-[#f4f7f5]">
+      <SidebarInset className="min-h-screen bg-background">
         {/* Barra superior visible solo en celular con SidebarTrigger para abrir el menú */}
-        <header className="flex h-14 items-center gap-3 border-b border-slate-200/80 bg-white px-4 md:hidden">
-          <SidebarTrigger className="text-slate-950 hover:bg-slate-100" />
-          <div className="flex items-center gap-2 font-semibold text-slate-950">
-            <PackageCheck className="size-5 text-emerald-600" />
+        <header className="flex h-14 items-center gap-3 border-b border-border/80 bg-card px-4 md:hidden">
+          <SidebarTrigger className="text-foreground hover:bg-accent" />
+          <div className="flex items-center gap-2 font-semibold text-foreground">
+            <PackageCheck className="size-5 text-primary" />
             <span>LogisTrack</span>
           </div>
         </header>

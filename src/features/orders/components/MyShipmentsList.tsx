@@ -27,10 +27,10 @@ function StatusBadge({ value }: { value: string }) {
     <Badge
       className={
         value === "ENTREGADO"
-          ? "border-emerald-200 bg-emerald-100 text-emerald-800"
+          ? "border-primary/30 bg-primary/10 text-primary"
           : value === "RECHAZADO"
-            ? "border-rose-200 bg-rose-100 text-rose-800"
-            : "border-slate-200 bg-slate-100 text-slate-700"
+            ? "border-destructive/30 bg-destructive/10 text-destructive"
+            : "border-border bg-muted text-muted-foreground"
       }
     >
       {statusLabels[value] ?? value.replaceAll("_", " ")}
@@ -49,7 +49,7 @@ export function MyShipmentsList({
 }) {
   if (loading)
     return (
-      <div className="space-y-3" aria-label="Cargando envíos">
+      <div className="space-y-3" role="status" aria-label="Cargando envíos">
         {[1, 2, 3].map((item) => (
           <Skeleton key={item} className="h-32 w-full rounded-2xl" />
         ))}
@@ -64,18 +64,18 @@ export function MyShipmentsList({
               <p className="font-mono text-sm font-semibold">
                 {shipment.numeroPedido}
               </p>
-              <p className="mt-2 text-sm text-slate-700">
+              <p className="mt-2 text-sm text-foreground">
                 <span className="font-medium">Remitente:</span>{" "}
                 {shipment.remitenteNombre}
               </p>
-              <p className="mt-1 text-sm text-slate-700">
+              <p className="mt-1 text-sm text-foreground">
                 <span className="font-medium">Destinatario:</span>{" "}
                 {shipment.destinatarioNombre}
               </p>
               {shipment.numeroTracking && (
                 <Link
                   to={`/panel/pedidos/seguimiento/${encodeURIComponent(shipment.numeroTracking)}`}
-                  className="mt-2 inline-flex min-h-11 items-center rounded-md px-2 py-1 font-mono text-sm font-semibold text-emerald-700 underline decoration-emerald-300 underline-offset-4 transition hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
+                  className="mt-2 inline-flex min-h-11 items-center rounded-md px-2 py-1 font-mono text-sm font-semibold text-primary underline decoration-primary/50 underline-offset-4 transition hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   Ver seguimiento: {shipment.numeroTracking}
                 </Link>
@@ -83,13 +83,13 @@ export function MyShipmentsList({
             </div>
             <div className="sm:text-right">
               <StatusBadge value={shipment.estado} />
-              <p className="mt-2 text-sm text-slate-600">
+              <p className="mt-2 text-sm text-muted-foreground">
                 Entrega estimada:{" "}
-                <span className="font-medium text-slate-800">
+                <span className="font-medium text-foreground">
                   {formatDate(shipment.fechaEstimadaEntrega)}
                 </span>
               </p>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-muted-foreground">
                 Creado: {formatDate(shipment.fechaCreacion)}
               </p>
               {shipment.estado === "CORRECCION_SOLICITADA" && (

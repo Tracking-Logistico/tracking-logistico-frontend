@@ -10,7 +10,7 @@ import type { IncidentType, OrderStatus } from "@/types/api";
 import { useIncidents } from "../hooks/useIncidents";
 
 const inputClass =
-  "h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10";
+  "h-11 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10";
 
 const statusLabels: Record<string, string> = {
   DIRECCION_POR_VERIFICAR: "Dirección por verificar",
@@ -114,13 +114,13 @@ export function IncidentPanel({
   }
 
   return (
-    <section className="mt-5 border-t border-slate-100 pt-5">
+    <section className="mt-5 border-t border-border pt-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="font-semibold text-slate-900">
+          <h3 className="font-semibold text-foreground">
             Incidencias del envío
           </h3>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             Registra una novedad usando el catálogo oficial.
           </p>
         </div>
@@ -163,7 +163,7 @@ export function IncidentPanel({
       {open && (
         <form
           onSubmit={(event) => void submit(event)}
-          className="mt-4 grid gap-4 rounded-xl bg-slate-50 p-4"
+          className="mt-4 grid gap-4 rounded-xl bg-muted p-4"
         >
           <div>
             <label
@@ -202,13 +202,13 @@ export function IncidentPanel({
             </label>
             <textarea
               id={`incident-comment-${orderId}`}
-              className="mt-2 min-h-24 w-full resize-y rounded-lg border border-slate-200 bg-white p-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
+              className="mt-2 min-h-24 w-full resize-y rounded-lg border border-input bg-background p-3 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
               maxLength={500}
               value={comment}
               onChange={(event) => setComment(event.target.value)}
               placeholder="Describe la situación"
             />
-            <p className="mt-1 text-right text-xs text-slate-500">
+            <p className="mt-1 text-right text-xs text-muted-foreground">
               {comment.length}/500
             </p>
           </div>
@@ -234,7 +234,7 @@ export function IncidentPanel({
       )}
 
       <div className="mt-4">
-        <p className="flex items-center gap-2 text-sm font-medium text-slate-700">
+        <p className="flex items-center gap-2 text-sm font-medium text-foreground">
           <History className="size-4" /> Historial
         </p>
         {loading && (
@@ -244,7 +244,7 @@ export function IncidentPanel({
           </div>
         )}
         {!loading && data?.incidencias.length === 0 && (
-          <p className="mt-3 text-sm text-slate-500">
+          <p className="mt-3 text-sm text-muted-foreground">
             No hay incidencias registradas.
           </p>
         )}
@@ -253,16 +253,18 @@ export function IncidentPanel({
             {data.incidencias.map((incident) => (
               <div
                 key={incident.id}
-                className="rounded-lg border border-slate-200 bg-white p-3 text-sm"
+                className="rounded-lg border border-border bg-card p-3 text-sm"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="font-medium">{incident.descripcionTipo}</p>
                   <Badge>{new Date(incident.fecha).toLocaleString()}</Badge>
                 </div>
                 {incident.comentario && (
-                  <p className="mt-2 text-slate-600">{incident.comentario}</p>
+                  <p className="mt-2 text-muted-foreground">
+                    {incident.comentario}
+                  </p>
                 )}
-                <p className="mt-2 text-xs text-slate-500">
+                <p className="mt-2 text-xs text-muted-foreground">
                   Estado: {statusName(incident.estadoResultante)} · Usuario{" "}
                   {incident.reportadoPorUsuarioId}
                   {incident.numeroIntento

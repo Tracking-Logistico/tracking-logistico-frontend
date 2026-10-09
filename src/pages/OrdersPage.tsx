@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/shared/FormField";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { RequestShipmentDialog } from "@/features/orders/components/RequestShipmentDialog";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { OrderHistory } from "@/features/orders/components/OrderHistory";
@@ -18,7 +19,7 @@ import { usePageMeta } from "@/hooks/usePageMeta";
 import type { OrderResponse, Priority, ReceiveOrderPayload } from "@/types/api";
 
 const inputClass =
-  "h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10";
+  "h-11 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10";
 const emptyForm: ReceiveOrderPayload = {
   direccionOrigen: "",
   ciudadOrigen: "",
@@ -161,7 +162,7 @@ function ClientOrders() {
             <EmptyState onCreate={() => setDialogOpen(true)} />
           )}
           {!shipments.loading && shipments.totalPages > 1 && (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 text-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-4 text-sm">
               <span>
                 Página {shipments.page + 1} de {shipments.totalPages}
               </span>
@@ -204,14 +205,14 @@ function ClientOrders() {
 
 function Status({ value }: { value: string }) {
   const styles: Record<string, string> = {
-    SOLICITADO: "bg-amber-100 text-amber-800 border-amber-200",
-    CORRECCION_SOLICITADA: "bg-orange-100 text-orange-800 border-orange-200",
-    CREADO: "bg-blue-100 text-blue-800 border-blue-200",
-    ENTREGADO: "bg-emerald-100 text-emerald-800 border-emerald-200",
-    RECHAZADO: "bg-rose-100 text-rose-800 border-rose-200",
+    SOLICITADO: "bg-secondary text-secondary-foreground border-border",
+    CORRECCION_SOLICITADA: "bg-secondary text-secondary-foreground border-border",
+    CREADO: "bg-accent text-accent-foreground border-border",
+    ENTREGADO: "bg-primary/10 text-primary border-primary/30",
+    RECHAZADO: "bg-destructive/10 text-destructive border-destructive/30",
   };
   return (
-    <Badge className={styles[value] ?? "bg-slate-100 text-slate-700"}>
+    <Badge className={styles[value] ?? "bg-muted text-muted-foreground"}>
       {statusLabels[value] ?? value.replaceAll("_", " ")}
     </Badge>
   );
@@ -237,7 +238,8 @@ function OperatorInbox() {
     if (!token) return;
     setLoading(true);
     try {
-      setOrders(await api.listPendingOrders(token));
+      const pendingOrders = await api.listPendingOrders(token);
+      setOrders(pendingOrders.content);
       setError("");
     } catch (e) {
       setError(getApiError(e));
@@ -318,7 +320,7 @@ function OperatorInbox() {
         {orders.map((o) => (
           <article
             key={o.id}
-            className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+            className="rounded-2xl border border-border bg-card p-6 shadow-sm"
           >
             <div className="flex flex-wrap justify-between gap-4">
               <div>
@@ -328,14 +330,14 @@ function OperatorInbox() {
                 <h2 className="mt-2 text-lg font-semibold">
                   {o.destinatarioNombre}
                 </h2>
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-muted-foreground">
                   {o.destinatarioTelefono} · {o.ciudadDestino} ·{" "}
                   {o.direccionDestino}
                 </p>
               </div>
               <Status value={o.estado} />
             </div>
-            <div className="mt-5 grid gap-3 rounded-xl bg-slate-50 p-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-5 grid gap-3 rounded-xl bg-muted p-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
               <span>
                 <b>Remitente:</b> {o.remitenteNombre || "Sin dato histórico"}
               </span>
@@ -358,7 +360,7 @@ function OperatorInbox() {
               </span>
             </div>
             {o.observacionesValidacion && (
-              <p className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              <p className="mt-4 rounded-lg bg-secondary px-3 py-2 text-sm text-secondary-foreground">
                 {o.observacionesValidacion}
               </p>
             )}
@@ -366,10 +368,12 @@ function OperatorInbox() {
               <>
                 <div className="mt-5 grid gap-4 lg:grid-cols-2">
                   <div>
-                    <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       Prioridad sugerida: {priorityLabels[o.prioridadSugerida]}
                     </label>
                     <select
+                      id={`priority-${o.id}`}
+                      aria-label={`Prioridad para el pedido ${o.numeroPedido}`}
                       className={`${inputClass} mt-2`}
                       value={priority[o.id] ?? o.prioridadSugerida}
                       onChange={(e) =>
@@ -504,13 +508,13 @@ function Header({
   onCreate?: () => void;
 }) {
   return (
-    <header className="flex flex-col gap-5 border-b border-slate-200 pb-8 sm:flex-row sm:items-end sm:justify-between">
+    <header className="flex flex-col gap-5 border-b border-border pb-8 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <p className="text-sm font-semibold uppercase tracking-[.16em] text-emerald-700">
+        <p className="text-sm font-semibold uppercase tracking-[.16em] text-primary">
           {eyebrow}
         </p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight">{title}</h1>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
           {description}
         </p>
       </div>
@@ -535,22 +539,26 @@ function Feedback({ error, message }: { error: string; message: string }) {
       {error}
     </Alert>
   ) : message ? (
-    <Alert className="mt-6 border-emerald-200 bg-emerald-50 text-emerald-800">
+    <Alert className="mt-6 border-primary/30 bg-primary/10 text-primary">
       {message}
     </Alert>
   ) : null;
 }
 function Loading() {
   return (
-    <div className="flex items-center gap-2 py-8 text-sm text-slate-500">
-      <LoaderCircle className="size-4 animate-spin" />
-      Cargando...
+    <div role="status" aria-label="Cargando pedidos" className="space-y-3 py-4">
+      <Skeleton className="h-28 w-full rounded-2xl" />
+      <Skeleton className="h-28 w-full rounded-2xl" />
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <LoaderCircle className="size-4 animate-spin" />
+        Cargando...
+      </div>
     </div>
   );
 }
 function OperatorEmpty({ text }: { text: string }) {
   return (
-    <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
+    <div className="rounded-xl border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">
       {text}
     </div>
   );

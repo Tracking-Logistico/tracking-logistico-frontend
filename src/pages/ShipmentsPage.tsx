@@ -7,6 +7,7 @@ import {
   Truck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { api, getApiError } from "@/lib/api";
 import { useAuthStore } from "@/stores/authStore";
 import { usePageMeta } from "@/hooks/usePageMeta";
@@ -91,15 +92,15 @@ export function ShipmentsPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-5 py-9 sm:px-8 lg:px-10">
-      <header className="flex flex-wrap items-end justify-between gap-5 border-b border-slate-200 pb-7">
+      <header className="flex flex-wrap items-end justify-between gap-5 border-b border-border pb-7">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[.18em] text-emerald-700">
+          <p className="text-xs font-semibold uppercase tracking-[.18em] text-primary">
             Operación logística
           </p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight">
             Centro de despachos
           </h1>
-          <p className="mt-3 max-w-xl text-sm leading-6 text-slate-600">
+          <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
             Activa el seguimiento, imprime etiquetas y registra cada avance
             hasta que el envío esté listo para reparto.
           </p>
@@ -123,7 +124,7 @@ export function ShipmentsPage() {
       {error && (
         <p
           role="alert"
-          className="mt-5 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800"
+          className="mt-5 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive"
         >
           {error}
         </p>
@@ -131,7 +132,7 @@ export function ShipmentsPage() {
       {message && (
         <p
           role="status"
-          className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"
+          className="mt-5 rounded-xl border border-primary/30 bg-primary/10 p-4 text-sm text-primary"
         >
           {message}
         </p>
@@ -139,41 +140,45 @@ export function ShipmentsPage() {
 
       <div className="mt-7 space-y-3">
         {loading && (
-          <p className="flex items-center gap-2 py-6 text-sm text-slate-500">
-            <LoaderCircle className="size-4 animate-spin" /> Consultando
-            despachos...
-          </p>
+          <div role="status" aria-label="Cargando despachos" className="space-y-3 py-4">
+            <Skeleton className="h-28 w-full rounded-2xl" />
+            <Skeleton className="h-28 w-full rounded-2xl" />
+            <p className="flex items-center gap-2 text-sm text-muted-foreground">
+              <LoaderCircle className="size-4 animate-spin" /> Consultando
+              despachos...
+            </p>
+          </div>
         )}
         {!loading && orders.length === 0 && (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-500">
+          <div className="rounded-2xl border border-dashed border-border bg-card p-10 text-center text-sm text-muted-foreground">
             No hay envíos pendientes de despacho.
           </div>
         )}
         {orders.map((order) => (
           <article
             key={order.id}
-            className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+            className="rounded-2xl border border-border bg-card p-6 shadow-sm"
           >
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <p className="font-mono text-sm font-semibold text-slate-900">
+                <p className="font-mono text-sm font-semibold text-foreground">
                   {order.numeroPedido}
                 </p>
-                <p className="mt-2 text-sm font-medium text-slate-800">
+                <p className="mt-2 text-sm font-medium text-foreground">
                   {order.destinatarioNombre || "Destinatario"}
                 </p>
-                <p className="mt-1 text-sm text-slate-600">
+                <p className="mt-1 text-sm text-muted-foreground">
                   {order.direccionDestino} · {order.ciudadDestino}
                 </p>
-                <p className="mt-2 font-mono text-xs text-slate-500">
+                <p className="mt-2 font-mono text-xs text-muted-foreground">
                   {order.numeroTracking || "Guía pendiente de generación"}
                 </p>
               </div>
-              <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">
+              <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
                 {statusNames[order.estado] ?? order.estado.replaceAll("_", " ")}
               </span>
             </div>
-            <div className="mt-5 flex flex-wrap gap-2 border-t border-slate-100 pt-5">
+            <div className="mt-5 flex flex-wrap gap-2 border-t border-border pt-5">
               {!order.numeroTracking && (
                 <Button
                   size="sm"
@@ -262,9 +267,9 @@ export function ShipmentsPage() {
 
 function Summary({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
-      <p className="text-xs font-medium text-slate-500">{label}</p>
-      <p className="mt-2 text-2xl font-semibold tabular-nums text-slate-900">
+    <div className="rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
+      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+      <p className="mt-2 text-2xl font-semibold tabular-nums text-foreground">
         {value}
       </p>
     </div>

@@ -125,7 +125,11 @@ async function request<T>(
       headers.set("Authorization", `Bearer ${replacement}`);
       response = await fetch(`${API_URL}${path}`, { ...init, headers });
     } catch {
-      // parseResponse below exposes the original unauthorized response when refresh fails.
+      const { useAuthStore } = await import("@/stores/authStore");
+      useAuthStore.getState().clearSession();
+      if (window.location.pathname !== "/login") {
+        window.location.assign("/login");
+      }
     }
   }
   return parseResponse<T>(response);
@@ -271,9 +275,9 @@ export const api = {
     );
   },
   listPendingOrders: (token: string) =>
-    request<OrderResponse[]>("/pedidos/pendientes", {}, token),
+    request<PageResponse<OrderResponse>>("/pedidos/pendientes", {}, token),
   listActivableOrders: (token: string) =>
-    request<OrderResponse[]>("/pedidos/activables", {}, token),
+    request<PageResponse<OrderResponse>>("/pedidos/activables", {}, token),
   listDispatchOrders: (token: string) =>
     request<OrderResponse[]>("/pedidos/despachos", {}, token),
   validateOrder: (id: number, payload: ValidateOrderPayload, token: string) =>
@@ -330,7 +334,7 @@ export const api = {
     ),
 
   listPendingRouteOrders: (token: string) =>
-    request<OrderResponse[]>("/rutas/envios-pendientes", {}, token),
+    request<PageResponse<OrderResponse>>("/rutas/envios-pendientes", {}, token),
   listDrivers: (token: string) =>
     request<DriverResponse[]>("/rutas/conductores-disponibles", {}, token),
   assignRouteOrder: (pedidoId: number, conductorId: number, token: string) =>
@@ -458,6 +462,16 @@ export function getApiError(
     typeof (error as { message?: unknown }).message === "string"
   ) {
     const apiError = error as ApiErrorShape;
+    if (apiError.status === 400)
+      return "Revisa los datos ingresados e inténtalo nuevamente.";
+    if (apiError.status === 401)
+      return "Tu sesión expiró. Inicia sesión nuevamente.";
+    if (apiError.status === 403)
+      return "No tienes permiso para realizar esta operación.";
+    if (apiError.status === 404)
+      return "No se encontró la información solicitada.";
+    if (apiError.status === 409)
+      return "La operación no puede completarse porque la información cambió.";
     const fields = apiError.details
       ? Object.entries(apiError.details).map(
           ([field, detail]) => `${field}: ${detail}`,

@@ -12,7 +12,7 @@ interface Perfil {
 interface ProfileSummaryProps {
   profile: Perfil;
   role: string | null;
-  onEdit: () => void;
+  onEdit?: () => void;
 }
 
 export function ProfileSummary({ profile, role, onEdit }: ProfileSummaryProps) {
@@ -41,13 +41,15 @@ export function ProfileSummary({ profile, role, onEdit }: ProfileSummaryProps) {
             {profile.direccion || "Sin dirección"}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={onEdit}
-          className="mt-5 text-sm font-medium text-emerald-700 hover:text-emerald-800"
-        >
-          Editar datos
-        </button>
+        {onEdit && (
+          <button
+            type="button"
+            onClick={onEdit}
+            className="mt-5 text-sm font-medium text-emerald-700 hover:text-emerald-800"
+          >
+            Editar datos
+          </button>
+        )}
       </CardContent>
     </Card>
   );

@@ -16,7 +16,7 @@ import { OrdersPage } from "./pages/OrdersPage";
 import { ShipmentsPage } from "./pages/ShipmentsPage";
 import { RoutesPage } from "./pages/RoutesPage";
 import { ShipmentTrackingPage } from "./pages/ShipmentTrackingPage";
-import { DriverDashboard } from "./features/driver/components/DriverDashboard";
+import { DriverRoutes } from "./features/driver/components/DriverRoutes";
 
 import { Toaster } from "@/components/ui/sonner";
 
@@ -81,7 +81,7 @@ export default function App() {
 
 function RoleRoutesPage() {
   const role = useAuthStore((state) => state.role);
-  return role === "CONDUCTOR" ? <DriverDashboard /> : <RoutesPage />;
+  return role === "CONDUCTOR" ? <DriverRoutes /> : <RoutesPage />;
 }
 
 function PublicLayout() {

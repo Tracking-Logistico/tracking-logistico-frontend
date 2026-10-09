@@ -45,7 +45,7 @@ export function OrderHistory({
         </Alert>
       )}
       {open && (
-        <div className="mt-3 space-y-2 border-l-2 border-emerald-200 pl-4 text-sm">
+        <div className="mt-3 space-y-2 border-l-2 border-primary/30 pl-4 text-sm">
           {events.length === 0 ? (
             <p className="text-muted-foreground">Sin eventos registrados.</p>
           ) : (

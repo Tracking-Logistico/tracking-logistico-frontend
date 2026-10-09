@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { MapPin, Navigation, RefreshCw, Wifi, WifiOff } from "lucide-react";
+import { RefreshCw, Wifi, WifiOff } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,7 +21,6 @@ import type {
   DeliveryResult,
   DriverDelivery,
   DriverProgress,
-  DriverRoute,
   NoveltyOption,
 } from "@/types/api";
 
@@ -35,7 +34,6 @@ export function DriverDashboard() {
   const token = useAuthStore((state) => state.accessToken);
   const [deliveries, setDeliveries] = useState<DriverDelivery[]>([]);
   const [progress, setProgress] = useState<DriverProgress | null>(null);
-  const [route, setRoute] = useState<DriverRoute | null>(null);
   const [catalog, setCatalog] = useState<NoveltyOption[]>([]);
   const [selected, setSelected] = useState<DriverDelivery | null>(null);
   const [result, setResult] = useState<DeliveryResult>("ENTREGADO");
@@ -46,6 +44,7 @@ export function DriverDashboard() {
   const [error, setError] = useState("");
   const [tab, setTab] = useState<"pending" | "completed">("pending");
   const catalogLoaded = useRef(false);
+  const catalogRef = useRef<NoveltyOption[]>([]);
   const offline = useOfflineDeliveryQueue();
 
   const refresh = useCallback(async () => {
@@ -53,20 +52,18 @@ export function DriverDashboard() {
     setLoading(true);
     setError("");
     try {
-      const [nextDeliveries, nextProgress, nextRoute, nextCatalog] =
-        await Promise.all([
-          api.driverDeliveries(token),
-          api.driverProgress(token),
-          api.driverRoute(token),
-          catalogLoaded.current
-            ? Promise.resolve(catalog)
-            : api.driverNoveltyCatalog(token),
-        ]);
+      const [nextDeliveries, nextProgress, nextCatalog] = await Promise.all([
+        api.driverDeliveries(token),
+        api.driverProgress(token),
+        catalogLoaded.current
+          ? Promise.resolve(catalogRef.current)
+          : api.driverNoveltyCatalog(token),
+      ]);
       setDeliveries(nextDeliveries);
       setProgress(nextProgress);
-      setRoute(nextRoute);
       if (!catalogLoaded.current) {
         setCatalog(nextCatalog);
+        catalogRef.current = nextCatalog;
         catalogLoaded.current = true;
       }
     } catch (e) {
@@ -188,15 +185,15 @@ export function DriverDashboard() {
 
   return (
     <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8 lg:px-10">
-      <header className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-7">
+      <header className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-7">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[.19em] text-emerald-700">
+          <p className="text-xs font-semibold uppercase tracking-[.19em] text-primary">
             Jornada del conductor
           </p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight">
             Mis entregas de hoy
           </h1>
-          <p className="mt-2 text-sm text-slate-600">
+          <p className="mt-2 text-sm text-muted-foreground">
             Registra cada resultado y mantén actualizada tu ruta.
           </p>
         </div>
@@ -211,7 +208,9 @@ export function DriverDashboard() {
       </header>
 
       <div
-        className={`mt-5 flex flex-wrap items-center gap-3 rounded-xl border p-3 text-sm ${offline.isOnline ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-900"}`}
+        role="status"
+        aria-live="polite"
+        className={`mt-5 flex flex-wrap items-center gap-3 rounded-xl border p-3 text-sm ${offline.isOnline ? "border-primary/30 bg-primary/10 text-primary" : "border-secondary bg-secondary text-secondary-foreground"}`}
       >
         {offline.isOnline ? (
           <Wifi className="size-4" />
@@ -232,7 +231,7 @@ export function DriverDashboard() {
       {error && (
         <div
           role="alert"
-          className="mt-5 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800"
+          className="mt-5 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive"
         >
           {error}
         </div>
@@ -246,13 +245,20 @@ export function DriverDashboard() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-3 overflow-hidden rounded-full bg-slate-100">
+          <div
+            role="progressbar"
+            aria-label="Avance de la jornada"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={percentage}
+            className="h-3 overflow-hidden rounded-full bg-muted"
+          >
             <div
-              className="h-full rounded-full bg-emerald-600 transition-all"
+              className="h-full rounded-full bg-primary transition-all"
               style={{ width: `${percentage}%` }}
             />
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-3 text-sm text-slate-600 sm:grid-cols-5">
+          <div className="mt-3 grid grid-cols-2 gap-3 text-sm text-muted-foreground sm:grid-cols-5">
             <span>Total: {progress?.totalEntregas ?? 0}</span>
             <span>Entregadas: {progress?.entregadas ?? 0}</span>
             <span>Pendientes: {progress?.pendientes ?? 0}</span>
@@ -273,52 +279,6 @@ export function DriverDashboard() {
         />
 
         <section>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Navigation className="size-5 text-emerald-700" /> Ruta
-                calculada
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="gap-3">
-              {route?.siguiente && (
-                <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
-                  <p className="text-xs font-semibold uppercase text-emerald-800">
-                    Siguiente parada recomendada
-                  </p>
-                  <p className="mt-1 font-medium">
-                    {route.siguiente.direccion}, {route.siguiente.ciudad}
-                  </p>
-                </div>
-              )}
-              {route?.paradas.map((stop) => (
-                <div
-                  key={stop.paradaId}
-                  className="flex gap-3 rounded-lg border p-3"
-                >
-                  <span className="grid size-7 shrink-0 place-items-center rounded-full bg-slate-900 text-xs font-bold text-white">
-                    {stop.orden}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium">
-                      {stop.direccion}, {stop.ciudad}
-                    </p>
-                    <p className="text-xs text-slate-500">{stop.estado}</p>
-                    {stop.sinUbicacion && (
-                      <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-amber-700">
-                        <MapPin className="size-3" /> Sin ubicación
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ))}
-              {!route?.paradas.length && (
-                <p className="text-sm text-slate-500">
-                  No hay paradas pendientes en la ruta.
-                </p>
-              )}
-            </CardContent>
-          </Card>
           <div className="mt-6">
             <DriverDeliveryDetail delivery={selected} onRegister={openResult} />
           </div>
@@ -349,6 +309,7 @@ export function DriverDashboard() {
                   <input
                     type="radio"
                     name="result"
+                    aria-label={resultLabels[option]}
                     value={option}
                     checked={result === option}
                     onChange={() => {
@@ -362,9 +323,14 @@ export function DriverDashboard() {
             </fieldset>
             {result !== "ENTREGADO" && (
               <>
-                <label className="grid gap-2 text-sm font-medium">
+                <label
+                  className="grid gap-2 text-sm font-medium"
+                  htmlFor="delivery-novelty"
+                >
                   Motivo
                   <select
+                    id="delivery-novelty"
+                    aria-label="Motivo del resultado"
                     className="h-11 rounded-md border bg-background px-3 font-normal"
                     value={novelty}
                     onChange={(event) => setNovelty(event.target.value)}
@@ -377,9 +343,14 @@ export function DriverDashboard() {
                     ))}
                   </select>
                 </label>
-                <label className="grid gap-2 text-sm font-medium">
+                <label
+                  className="grid gap-2 text-sm font-medium"
+                  htmlFor="delivery-reason"
+                >
                   Descripción
                   <textarea
+                    id="delivery-reason"
+                    aria-label="Descripción de la novedad"
                     className="min-h-24 rounded-md border bg-background p-3 font-normal"
                     value={reason}
                     onChange={(event) => setReason(event.target.value)}

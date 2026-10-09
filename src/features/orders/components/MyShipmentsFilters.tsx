@@ -13,7 +13,7 @@ const statuses: Array<{ value: OrderStatus; label: string }> = [
 ];
 
 const inputClass =
-  "h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10";
+  "h-11 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10";
 
 export function MyShipmentsFilters({
   filters,
@@ -23,11 +23,13 @@ export function MyShipmentsFilters({
   onChange: (next: Partial<MyShipmentsFilters>) => void;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <label className="text-sm font-medium">
           Estado
           <select
+            id="shipments-status-filter"
+            aria-label="Filtrar envíos por estado"
             className={`${inputClass} mt-2`}
             value={filters.estado}
             onChange={(event) =>
@@ -45,6 +47,8 @@ export function MyShipmentsFilters({
         <label className="text-sm font-medium">
           Desde
           <input
+            id="shipments-date-from"
+            aria-label="Filtrar envíos desde una fecha"
             className={`${inputClass} mt-2`}
             type="date"
             value={filters.fechaDesde}
@@ -54,6 +58,8 @@ export function MyShipmentsFilters({
         <label className="text-sm font-medium">
           Hasta
           <input
+            id="shipments-date-to"
+            aria-label="Filtrar envíos hasta una fecha"
             className={`${inputClass} mt-2`}
             type="date"
             value={filters.fechaHasta}
@@ -63,6 +69,8 @@ export function MyShipmentsFilters({
         <label className="text-sm font-medium">
           Ordenar por
           <select
+            id="shipments-sort"
+            aria-label="Ordenar envíos"
             className={`${inputClass} mt-2`}
             value={`${filters.sort},${filters.direction}`}
             onChange={(event) => {

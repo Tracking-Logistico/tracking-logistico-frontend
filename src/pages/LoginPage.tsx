@@ -137,9 +137,9 @@ export function LoginPage() {
                 }
               >
                 {showPassword ? (
-                  <EyeOff className="size-4" />
+                  <EyeOff className="size-4" aria-hidden="true" />
                 ) : (
-                  <Eye className="size-4" />
+                  <Eye className="size-4" aria-hidden="true" />
                 )}
               </button>
             </div>

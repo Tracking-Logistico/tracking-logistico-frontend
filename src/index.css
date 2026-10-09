@@ -49,20 +49,20 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --background: oklch(0.98 0.01 155);
+  --foreground: oklch(0.2 0.02 160);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.2 0.02 160);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.2 0.02 160);
+  --primary: oklch(0.62 0.17 155);
+  --primary-foreground: oklch(0.98 0.01 155);
+  --secondary: oklch(0.93 0.03 155);
+  --secondary-foreground: oklch(0.24 0.03 160);
+  --muted: oklch(0.94 0.02 155);
+  --muted-foreground: oklch(0.48 0.03 160);
+  --accent: oklch(0.92 0.04 155);
+  --accent-foreground: oklch(0.24 0.03 160);
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
@@ -109,17 +109,34 @@
   --chart-5: oklch(0.269 0 0);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary: oklch(0.78 0.17 155);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent: oklch(0.25 0.035 160);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-ring: oklch(0.78 0.17 155);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
+  }
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary,
+  [data-slot="select-trigger"]:not([data-disabled]),
+  [data-slot="tabs-trigger"]:not([data-disabled]),
+  [data-slot="dialog-trigger"]:not([data-disabled]),
+  [data-slot="drawer-trigger"]:not([data-disabled]),
+  [data-slot="accordion-trigger"]:not([data-disabled]),
+  [data-slot="checkbox"]:not([data-disabled]),
+  [data-slot="radio-group-item"]:not([data-disabled]) {
+    cursor: pointer;
+  }
+  button:disabled,
+  [role="button"][aria-disabled="true"],
+  [data-disabled] {
+    cursor: not-allowed;
   }
   body {
     @apply bg-background text-foreground;

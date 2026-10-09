@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { DriverDelivery } from "@/types/api";
 
 const statusLabels: Record<string, string> = {
@@ -13,10 +14,10 @@ const statusLabels: Record<string, string> = {
 
 function deliveryBadge(state: string) {
   if (state === "ENTREGADO")
-    return "border-emerald-200 bg-emerald-50 text-emerald-800";
+    return "border-primary/30 bg-primary/10 text-primary";
   if (state === "FALLIDA" || state === "DEVOLUCION_AL_REMITENTE")
-    return "border-rose-200 bg-rose-50 text-rose-800";
-  return "border-amber-200 bg-amber-50 text-amber-800";
+    return "border-destructive/30 bg-destructive/10 text-destructive";
+  return "border-secondary bg-secondary text-secondary-foreground";
 }
 
 interface DriverDeliveryListProps {
@@ -46,15 +47,19 @@ export function DriverDeliveryList({
 
   return (
     <section>
-      <div className="flex gap-2 border-b border-slate-200">
+      <div className="flex gap-2 border-b border-border">
         <button
-          className={`px-4 py-3 text-sm font-semibold ${tab === "pending" ? "border-b-2 border-emerald-600 text-emerald-700" : "text-slate-500"}`}
+          type="button"
+          aria-selected={tab === "pending"}
+          className={`px-4 py-3 text-sm font-semibold ${tab === "pending" ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`}
           onClick={() => onTabChange("pending")}
         >
           Pendientes ({pending.length})
         </button>
         <button
-          className={`px-4 py-3 text-sm font-semibold ${tab === "completed" ? "border-b-2 border-emerald-600 text-emerald-700" : "text-slate-500"}`}
+          type="button"
+          aria-selected={tab === "completed"}
+          className={`px-4 py-3 text-sm font-semibold ${tab === "completed" ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`}
           onClick={() => onTabChange("completed")}
         >
           Completadas ({completed.length})
@@ -63,10 +68,7 @@ export function DriverDeliveryList({
       <div className="mt-4 grid gap-3">
         {loading &&
           [1, 2, 3].map((item) => (
-            <div
-              key={item}
-              className="h-36 animate-pulse rounded-xl bg-slate-100"
-            />
+            <Skeleton key={item} className="h-36 rounded-xl" />
           ))}
         {!loading &&
           visible.map((delivery) => (
@@ -80,7 +82,7 @@ export function DriverDeliveryList({
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div>
                       <p className="font-semibold">#{delivery.numeroPedido}</p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-muted-foreground">
                         {delivery.numeroTracking}
                       </p>
                     </div>
@@ -90,7 +92,7 @@ export function DriverDeliveryList({
                     </Badge>
                   </div>
                   <p className="mt-2 text-sm">{delivery.destinatarioNombre}</p>
-                  <p className="text-sm text-slate-600">
+                  <p className="text-sm text-muted-foreground">
                     {delivery.direccionDestino}, {delivery.ciudadDestino}
                   </p>
                 </button>
@@ -106,7 +108,7 @@ export function DriverDeliveryList({
             </Card>
           ))}
         {!loading && !visible.length && (
-          <p className="rounded-xl border border-dashed p-6 text-center text-sm text-slate-500">
+          <p className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
             No hay entregas en esta sección.
           </p>
         )}

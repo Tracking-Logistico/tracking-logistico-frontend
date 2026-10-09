@@ -173,7 +173,7 @@ export function RequestShipmentDialog({
               </label>
               <select
                 id="service"
-                className="mt-2 h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm"
+                className="mt-2 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
                 value={form.tipoServicio}
                 onChange={(e) =>
                   update("tipoServicio", e.target.value as ServiceType)

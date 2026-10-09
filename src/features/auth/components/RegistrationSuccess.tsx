@@ -39,7 +39,10 @@ export function RegistrationSuccess({ email }: RegistrationSuccessProps) {
   return (
     <Card className="w-full max-w-xl border-slate-200 bg-white shadow-sm">
       <CardHeader className="text-center pt-8">
-        <CheckCircle2 className="mx-auto size-14 text-emerald-600" />
+        <CheckCircle2
+          className="mx-auto size-14 text-emerald-600"
+          aria-hidden="true"
+        />
         <h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
           Tu cuenta está lista
         </h1>
@@ -51,7 +54,10 @@ export function RegistrationSuccess({ email }: RegistrationSuccessProps) {
       </CardHeader>
       <CardContent className="space-y-4">
         {resendMessage && (
-          <Alert className="border-emerald-200 bg-emerald-50 text-emerald-800">
+          <Alert
+            role="status"
+            className="border-emerald-200 bg-emerald-50 text-emerald-800"
+          >
             <AlertDescription className="text-emerald-800">
               {resendMessage}
             </AlertDescription>
@@ -72,7 +78,7 @@ export function RegistrationSuccess({ email }: RegistrationSuccessProps) {
           className="w-full sm:w-auto gap-2 bg-slate-950 text-white hover:bg-slate-800"
         >
           Ir a iniciar sesión
-          <ArrowRight className="size-4" />
+          <ArrowRight className="size-4" aria-hidden="true" />
         </Button>
       </CardFooter>
     </Card>
