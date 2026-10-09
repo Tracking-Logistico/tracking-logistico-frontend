@@ -1,6 +1,6 @@
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, ClipboardList, Map, PackageCheck } from "lucide-react";
-import { UnavailableModule } from "@/components/UnavailableModule";
+import { UnavailableModule } from "@/components/shared/UnavailableModule";
 import { usePageMeta } from "@/hooks/usePageMeta";
 
 const modules = {

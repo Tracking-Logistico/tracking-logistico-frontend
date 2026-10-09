@@ -3,7 +3,7 @@ import type { FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, CheckCircle2, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { FormField } from "@/components/FormField";
+import { FormField } from "@/components/shared/FormField";
 import { api, getApiError } from "@/lib/api";
 import { usePageMeta } from "@/hooks/usePageMeta";
 

@@ -1,28 +1,154 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, KeyRound, UserRound } from "lucide-react";
+import { ArrowLeft, KeyRound } from "lucide-react";
+import { toast } from "sonner";
 import { useAuthStore } from "@/stores/authStore";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { api, getApiError } from "@/lib/api";
-import { FormField } from "@/components/FormField";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChangePasswordDialog } from "@/features/settings/components/ChangePasswordDialog";
+import { DeactivateAccountDialog } from "@/features/settings/components/DeactivateAccountDialog";
+import { EditProfileDialog } from "@/features/settings/components/EditProfileDialog";
+import { ProfileSummary } from "@/features/settings/components/ProfileSummary";
+
+interface Perfil {
+  nombre: string;
+  telefono: string;
+  direccion: string;
+}
+
+interface Password {
+  actual: string;
+  nueva: string;
+  confirmacion: string;
+}
 
 export function SettingsPage() {
   usePageMeta("Configuración", "Seguridad y datos de tu cuenta en LogisTrack.");
   const { role, userId, accessToken, requiresPasswordChange, clearSession } = useAuthStore();
-  const [password,setPassword]=useState({actual:"",nueva:"",confirmacion:""});
-  const [profile,setProfile]=useState({nombre:"",telefono:"",direccion:""});
-  const [message,setMessage]=useState(""); const [error,setError]=useState(""); const [loading,setLoading]=useState(false); const navigate=useNavigate();
+  const [password, setPassword] = useState<Password>({ actual: "", nueva: "", confirmacion: "" });
+  const [profile, setProfile] = useState<Perfil>({ nombre: "", telefono: "", direccion: "" });
+  const [loading, setLoading] = useState(false);
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(requiresPasswordChange);
+  const navigate = useNavigate();
 
-  useEffect(()=>{ if(role === "CLIENTE" && accessToken && !requiresPasswordChange) api.myProfile(accessToken).then(p=>setProfile({nombre:p.nombre,telefono:p.telefono??"",direccion:p.direccion??""})).catch(()=>undefined); },[role,accessToken,requiresPasswordChange]);
+  useEffect(() => {
+    if (role === "CLIENTE" && accessToken && !requiresPasswordChange) {
+      api.myProfile(accessToken)
+        .then((profileResponse) => setProfile({
+          nombre: profileResponse.nombre,
+          telefono: profileResponse.telefono ?? "",
+          direccion: profileResponse.direccion ?? "",
+        }))
+        .catch(() => undefined);
+    }
+  }, [role, accessToken, requiresPasswordChange]);
 
-  async function changePassword(e: FormEvent){e.preventDefault(); setError(""); setMessage(""); if(!userId||!accessToken)return setError("La sesión no contiene la información necesaria."); if(password.nueva!==password.confirmacion)return setError("Las contraseñas nuevas no coinciden."); setLoading(true); try{await api.changePassword(userId,password.actual,password.nueva,password.confirmacion,accessToken); setMessage("Contraseña actualizada. Inicia sesión nuevamente con tu contraseña definitiva."); setTimeout(()=>{clearSession(); navigate("/login",{replace:true});},800);}catch(err){setError(getApiError(err,"No fue posible actualizar la contraseña."));}finally{setLoading(false)}}
-  async function saveProfile(e: FormEvent){e.preventDefault(); if(!accessToken)return; setError(""); setMessage(""); setLoading(true); try{await api.updateMyProfile(profile,accessToken); setMessage("Datos personales actualizados.");}catch(err){setError(getApiError(err,"No fue posible actualizar el perfil."));}finally{setLoading(false)}}
-  async function deactivate(){if(!accessToken || !confirm("¿Confirmas que deseas desactivar tu cuenta? El historial de envíos se conservará."))return; setLoading(true); try{await api.deactivateMyAccount(accessToken); clearSession(); navigate("/",{replace:true});}catch(err){setError(getApiError(err,"No fue posible desactivar la cuenta.")); setLoading(false)}}
+  async function changePassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!userId || !accessToken) {
+      toast.error("La sesión no contiene la información necesaria.");
+      return;
+    }
+    if (password.nueva !== password.confirmacion) {
+      toast.error("Las contraseñas nuevas no coinciden.");
+      return;
+    }
+    setLoading(true);
+    try {
+      await api.changePassword(userId, password.actual, password.nueva, password.confirmacion, accessToken);
+      toast.success("Contraseña actualizada. Inicia sesión nuevamente con tu contraseña definitiva.");
+      setPasswordDialogOpen(false);
+      setTimeout(() => {
+        clearSession();
+        navigate("/login", { replace: true });
+      }, 800);
+    } catch (error) {
+      toast.error(getApiError(error, "No fue posible actualizar la contraseña."));
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  return <div className="mx-auto max-w-4xl px-5 py-8 sm:px-8 lg:px-10">{!requiresPasswordChange && <Link to="/panel" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-950"><ArrowLeft className="size-4"/>Volver al resumen</Link>}<h1 className="mt-8 text-3xl font-semibold tracking-tight">{requiresPasswordChange ? "Activa tu cuenta" : "Configuración"}</h1><p className="mt-3 text-sm text-slate-500">{requiresPasswordChange ? "Por seguridad debes cambiar la contraseña temporal antes de continuar." : `Sesión activa con rol ${role}.`}</p>
-  {role === "CLIENTE" && !requiresPasswordChange && <form onSubmit={saveProfile} className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><div className="flex items-start gap-4"><span className="grid size-10 shrink-0 place-items-center rounded-lg bg-emerald-100 text-emerald-700"><UserRound className="size-5"/></span><div className="w-full"><h2 className="font-semibold">Datos personales</h2><div className="mt-5 grid gap-4"><FormField label="Nombre" name="nombre" required value={profile.nombre} onChange={e=>setProfile({...profile,nombre:e.target.value})}/><FormField label="Teléfono" name="telefono" type="tel" value={profile.telefono} onChange={e=>setProfile({...profile,telefono:e.target.value})}/><FormField label="Dirección" name="direccion" value={profile.direccion} onChange={e=>setProfile({...profile,direccion:e.target.value})}/></div><div className="mt-5 flex flex-wrap gap-3"><Button type="submit" disabled={loading}>Guardar cambios</Button><Button type="button" variant="outline" disabled={loading} onClick={deactivate}>Desactivar cuenta</Button></div></div></div></form>}
-  <form onSubmit={changePassword} className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><div className="flex items-start gap-4"><span className="grid size-10 shrink-0 place-items-center rounded-lg bg-emerald-100 text-emerald-700"><KeyRound className="size-5"/></span><div className="w-full"><h2 className="font-semibold">Cambiar contraseña</h2><div className="mt-5 grid gap-4"><FormField label="Contraseña actual" name="actual" type="password" required value={password.actual} onChange={e=>setPassword({...password,actual:e.target.value})}/><FormField label="Nueva contraseña" name="nueva" type="password" required hint="Mínimo 8 caracteres con mayúscula, minúscula, número y símbolo." value={password.nueva} onChange={e=>setPassword({...password,nueva:e.target.value})}/><FormField label="Confirmar nueva contraseña" name="confirmacion" type="password" required value={password.confirmacion} onChange={e=>setPassword({...password,confirmacion:e.target.value})}/></div><Button className="mt-5" type="submit" disabled={loading}>{loading?"Actualizando...":"Actualizar contraseña"}</Button></div></div></form>
-  {error&&<p className="mt-4 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}{message&&<p className="mt-4 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700">{message}</p>}</div>;
+  async function saveProfile(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!accessToken) return;
+    setLoading(true);
+    try {
+      await api.updateMyProfile(profile, accessToken);
+      setProfileDialogOpen(false);
+      toast.success("Datos personales actualizados.");
+    } catch (error) {
+      toast.error(getApiError(error, "No fue posible actualizar el perfil."));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function deactivate() {
+    if (!accessToken) return;
+    setLoading(true);
+    try {
+      await api.deactivateMyAccount(accessToken);
+      clearSession();
+      navigate("/", { replace: true });
+    } catch (error) {
+      toast.error(getApiError(error, "No fue posible desactivar la cuenta."));
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="mx-auto max-w-4xl px-5 py-8 sm:px-8 lg:px-10">
+      {!requiresPasswordChange && (
+        <Link to="/panel" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="size-4" />Volver al resumen
+        </Link>
+      )}
+      <h1 className="mt-8 text-3xl font-semibold tracking-tight">
+        {requiresPasswordChange ? "Activa tu cuenta" : "Configuración"}
+      </h1>
+      <p className="mt-3 text-sm text-muted-foreground">
+        {requiresPasswordChange ? "Por seguridad debes cambiar la contraseña temporal antes de continuar." : `Sesión activa con rol ${role}.`}
+      </p>
+
+      {!requiresPasswordChange && (
+        <>
+          <div className="mt-8">
+            <ProfileSummary profile={profile} role={role} onEdit={() => setProfileDialogOpen(true)} />
+          </div>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <Card>
+              <CardHeader><CardTitle className="flex items-center gap-2"><KeyRound className="size-5 text-emerald-700" />Seguridad</CardTitle></CardHeader>
+              <CardContent><Button variant="outline" onClick={() => setPasswordDialogOpen(true)}>Cambiar contraseña</Button></CardContent>
+            </Card>
+            <Card>
+              <CardHeader><CardTitle>Cuenta</CardTitle></CardHeader>
+              <CardContent><DeactivateAccountDialog onConfirm={deactivate} loading={loading} /></CardContent>
+            </Card>
+          </div>
+        </>
+      )}
+
+      <EditProfileDialog
+        open={profileDialogOpen}
+        onOpenChange={setProfileDialogOpen}
+        profile={profile}
+        onChange={setProfile}
+        onSubmit={saveProfile}
+        loading={loading}
+      />
+      <ChangePasswordDialog
+        open={passwordDialogOpen}
+        onOpenChange={setPasswordDialogOpen}
+        password={password}
+        onChange={setPassword}
+        onSubmit={changePassword}
+        loading={loading}
+      />
+    </div>
+  );
 }
