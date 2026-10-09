@@ -141,6 +141,11 @@ export interface ShipmentTrackingResponse {
   fechaLimiteVerificacionDireccion?: string;
 }
 
+export interface ReschedulingRangeResponse {
+  desde: string;
+  hasta: string;
+}
+
 export interface PageResponse<T> {
   content: T[];
   totalPages: number;

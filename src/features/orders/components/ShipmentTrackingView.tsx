@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { ShipmentTrackingResponse } from "@/types/api";
+import { RescheduleDeliveryForm } from "./RescheduleDeliveryForm";
 
 const statusLabels: Record<string, string> = {
   SOLICITADO: "Pendiente de validación",
@@ -13,6 +14,11 @@ const statusLabels: Record<string, string> = {
   EN_REPARTO: "En reparto",
   ENTREGADO: "Entregado",
   RECHAZADO: "Rechazado",
+  ENTREGA_FALLIDA: "Entrega fallida",
+  ENTREGA_REPROGRAMADA: "Entrega reprogramada",
+  DIRECCION_POR_VERIFICAR: "Dirección por verificar",
+  DEVOLUCION_AL_REMITENTE: "Devolución al remitente",
+  ENTREGA_FALLIDA_CERRADA: "Entrega fallida cerrada",
 };
 
 function formatDate(value?: string) {
@@ -21,11 +27,24 @@ function formatDate(value?: string) {
     : "Pendiente de definir";
 }
 
-export function ShipmentTrackingView({ shipment, loading, showSkeleton, error }: {
+export function ShipmentTrackingView({
+  shipment,
+  loading,
+  showSkeleton,
+  error,
+  reschedulingRange,
+  rescheduling,
+  reschedulingError,
+  submitRescheduling,
+}: {
   shipment: ShipmentTrackingResponse | null;
   loading: boolean;
   showSkeleton: boolean;
   error: string;
+  reschedulingRange?: { desde: string; hasta: string } | null;
+  rescheduling: boolean;
+  reschedulingError: string;
+  submitRescheduling: (fecha: string) => Promise<void>;
 }) {
   if (loading || showSkeleton) {
     return <div className="space-y-4" aria-label="Cargando seguimiento">
@@ -55,6 +74,11 @@ export function ShipmentTrackingView({ shipment, loading, showSkeleton, error }:
         <p className="text-sm text-muted-foreground">Número de seguimiento</p>
         <p className="mt-1 break-all font-mono text-base font-semibold">{shipment.numeroTracking}</p>
         <p className="mt-4 text-base font-medium text-slate-900">{shipment.descripcionEstado}</p>
+        {shipment.estado === "ENTREGA_REPROGRAMADA" && shipment.fechaEntregaReprogramada && (
+          <p className="mt-2 text-sm font-medium text-emerald-700">
+            Nueva fecha de entrega: {new Date(`${shipment.fechaEntregaReprogramada}T00:00:00`).toLocaleDateString("es-CO", { dateStyle: "long" })}
+          </p>
+        )}
         <p className="mt-2 text-sm text-muted-foreground">Entrega estimada: {formatDate(shipment.fechaEstimadaEntrega)}</p>
       </CardContent>
     </Card>
@@ -78,5 +102,20 @@ export function ShipmentTrackingView({ shipment, loading, showSkeleton, error }:
       <AlertTitle>{shipment.novedad.titulo}</AlertTitle>
       <AlertDescription>{shipment.novedad.mensaje}</AlertDescription>
     </Alert>}
+    {shipment.estado === "ENTREGA_FALLIDA" && reschedulingRange && (
+      <RescheduleDeliveryForm
+        desde={reschedulingRange.desde}
+        hasta={reschedulingRange.hasta}
+        loading={rescheduling}
+        error={reschedulingError}
+        onSubmit={submitRescheduling}
+      />
+    )}
+    {shipment.estado === "ENTREGA_FALLIDA" && !reschedulingRange && reschedulingError && (
+      <Alert variant="destructive">
+        <AlertTitle>No pudimos consultar las fechas disponibles</AlertTitle>
+        <AlertDescription>{reschedulingError}</AlertDescription>
+      </Alert>
+    )}
   </div>;
 }

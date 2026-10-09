@@ -27,6 +27,7 @@ import type {
   PageResponse,
   OrderStatus,
   ShipmentTrackingResponse,
+  ReschedulingRangeResponse,
   IncidentType,
   IncidentsResponse,
   RegisterIncidentPayload,
@@ -294,6 +295,18 @@ export const api = {
     request<ShipmentTrackingResponse>(
       `/pedidos/mios/tracking/${encodeURIComponent(tracking)}`,
       {},
+      token,
+    ),
+  getReschedulingRange: (tracking: string, token: string) =>
+    request<ReschedulingRangeResponse>(
+      `/pedidos/mios/tracking/${encodeURIComponent(tracking)}/reprogramacion/rango`,
+      {},
+      token,
+    ),
+  rescheduleShipment: (tracking: string, fecha: string, token: string) =>
+    request<ShipmentTrackingResponse>(
+      `/pedidos/mios/tracking/${encodeURIComponent(tracking)}/reprogramacion`,
+      { method: "POST", body: JSON.stringify({ fecha }) },
       token,
     ),
   generateLabel: (id: number, token: string) =>

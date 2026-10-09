@@ -6,6 +6,7 @@ import { useShipmentTracking } from "@/features/orders/hooks/useShipmentTracking
 import { ShipmentTrackingView } from "@/features/orders/components/ShipmentTrackingView";
 import { useAuthStore } from "@/stores/authStore";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { toast } from "sonner";
 
 export function ShipmentTrackingPage() {
   usePageMeta("Seguimiento", "Consulta el estado y los movimientos de tu envío.");
@@ -29,6 +30,9 @@ export function ShipmentTrackingPage() {
       </Alert>
       <Button render={<Link to="/panel/pedidos" />}>Volver a Mis envíos</Button>
     </div>}
-    {!tracking.error && <ShipmentTrackingView {...tracking} />}
+    {!tracking.error && <ShipmentTrackingView {...tracking} submitRescheduling={async (fecha) => {
+      await tracking.submitRescheduling(fecha);
+      toast.success("Entrega reprogramada correctamente.");
+    }} />}
   </main>;
 }
