@@ -3,7 +3,10 @@ interface PasswordStrengthMeterProps {
   width: string;
 }
 
-export function PasswordStrengthMeter({ label, width }: PasswordStrengthMeterProps) {
+export function PasswordStrengthMeter({
+  label,
+  width,
+}: PasswordStrengthMeterProps) {
   const colorClass =
     label === "Fuerte"
       ? "bg-emerald-600"
@@ -19,7 +22,14 @@ export function PasswordStrengthMeter({ label, width }: PasswordStrengthMeterPro
         <span>Fortaleza de contraseña</span>
         <span className="font-medium text-slate-700">{label}</span>
       </div>
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+      <div
+        role="progressbar"
+        aria-label="Fortaleza de contraseña"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuetext={label}
+        className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100"
+      >
         <div
           className={`h-full transition-all duration-300 ${colorClass}`}
           style={{ width }}

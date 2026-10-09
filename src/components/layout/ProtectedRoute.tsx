@@ -8,11 +8,12 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ roles }: ProtectedRouteProps) {
   const location = useLocation();
-  const { accessToken, role, isHydrated, requiresPasswordChange } = useAuthStore();
+  const { accessToken, role, isHydrated, requiresPasswordChange } =
+    useAuthStore();
 
   if (!isHydrated) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950 text-sm text-slate-300">
+      <div className="flex min-h-screen items-center justify-center bg-sidebar text-sm text-sidebar-foreground">
         Cargando sesión...
       </div>
     );
