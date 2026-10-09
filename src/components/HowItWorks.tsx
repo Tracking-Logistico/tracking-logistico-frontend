@@ -1,8 +1,4 @@
-import {
-  CheckCircle2,
-  PackageCheck,
-  Truck,
-} from "lucide-react";
+import { CheckCircle2, PackageCheck, Truck } from "lucide-react";
 
 export const HowItWorks = () => {
   const steps = [

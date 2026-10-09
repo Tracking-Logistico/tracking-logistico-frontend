@@ -61,12 +61,18 @@ export function useIncidents(orderId: number, token: string | null) {
   }, [load]);
 
   const register = useCallback(
-    async (payload: RegisterIncidentPayload): Promise<RegisterIncidentResponse> => {
+    async (
+      payload: RegisterIncidentPayload,
+    ): Promise<RegisterIncidentResponse> => {
       if (!token) throw new Error("La sesión ha expirado.");
-      const result = await createIncident(orderId, {
-        ...payload,
-        versionEsperada: data?.versionPedido,
-      }, token);
+      const result = await createIncident(
+        orderId,
+        {
+          ...payload,
+          versionEsperada: data?.versionPedido,
+        },
+        token,
+      );
       await load();
       return result;
     },

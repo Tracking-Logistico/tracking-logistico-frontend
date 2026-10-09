@@ -8,7 +8,7 @@ export const HomePage = () => {
     <main>
       <Header />
       <HowItWorks />
-      <IntendedAudience/>
+      <IntendedAudience />
       <Footer />
     </main>
   );

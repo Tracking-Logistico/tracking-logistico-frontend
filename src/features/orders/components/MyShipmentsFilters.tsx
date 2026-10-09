@@ -12,33 +12,74 @@ const statuses: Array<{ value: OrderStatus; label: string }> = [
   { value: "RECHAZADO", label: "Rechazado" },
 ];
 
-const inputClass = "h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10";
+const inputClass =
+  "h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10";
 
-export function MyShipmentsFilters({ filters, onChange }: { filters: MyShipmentsFilters; onChange: (next: Partial<MyShipmentsFilters>) => void }) {
-  return <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <label className="text-sm font-medium">Estado
-        <select className={`${inputClass} mt-2`} value={filters.estado} onChange={(event) => onChange({ estado: event.target.value as OrderStatus | "" })}>
-          <option value="">Todos los estados</option>{statuses.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}
-        </select>
-      </label>
-      <label className="text-sm font-medium">Desde
-        <input className={`${inputClass} mt-2`} type="date" value={filters.fechaDesde} onChange={(event) => onChange({ fechaDesde: event.target.value })} />
-      </label>
-      <label className="text-sm font-medium">Hasta
-        <input className={`${inputClass} mt-2`} type="date" value={filters.fechaHasta} onChange={(event) => onChange({ fechaHasta: event.target.value })} />
-      </label>
-      <label className="text-sm font-medium">Ordenar por
-        <select className={`${inputClass} mt-2`} value={`${filters.sort},${filters.direction}`} onChange={(event) => {
-          const [sort, direction] = event.target.value.split(",") as [MyShipmentsFilters["sort"], MyShipmentsFilters["direction"]];
-          onChange({ sort, direction });
-        }}>
-          <option value="fechaCreacion,desc">Fecha: más recientes</option>
-          <option value="fechaCreacion,asc">Fecha: más antiguas</option>
-          <option value="estado,asc">Estado: A-Z</option>
-          <option value="estado,desc">Estado: Z-A</option>
-        </select>
-      </label>
+export function MyShipmentsFilters({
+  filters,
+  onChange,
+}: {
+  filters: MyShipmentsFilters;
+  onChange: (next: Partial<MyShipmentsFilters>) => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <label className="text-sm font-medium">
+          Estado
+          <select
+            className={`${inputClass} mt-2`}
+            value={filters.estado}
+            onChange={(event) =>
+              onChange({ estado: event.target.value as OrderStatus | "" })
+            }
+          >
+            <option value="">Todos los estados</option>
+            {statuses.map((status) => (
+              <option key={status.value} value={status.value}>
+                {status.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="text-sm font-medium">
+          Desde
+          <input
+            className={`${inputClass} mt-2`}
+            type="date"
+            value={filters.fechaDesde}
+            onChange={(event) => onChange({ fechaDesde: event.target.value })}
+          />
+        </label>
+        <label className="text-sm font-medium">
+          Hasta
+          <input
+            className={`${inputClass} mt-2`}
+            type="date"
+            value={filters.fechaHasta}
+            onChange={(event) => onChange({ fechaHasta: event.target.value })}
+          />
+        </label>
+        <label className="text-sm font-medium">
+          Ordenar por
+          <select
+            className={`${inputClass} mt-2`}
+            value={`${filters.sort},${filters.direction}`}
+            onChange={(event) => {
+              const [sort, direction] = event.target.value.split(",") as [
+                MyShipmentsFilters["sort"],
+                MyShipmentsFilters["direction"],
+              ];
+              onChange({ sort, direction });
+            }}
+          >
+            <option value="fechaCreacion,desc">Fecha: más recientes</option>
+            <option value="fechaCreacion,asc">Fecha: más antiguas</option>
+            <option value="estado,asc">Estado: A-Z</option>
+            <option value="estado,desc">Estado: Z-A</option>
+          </select>
+        </label>
+      </div>
     </div>
-  </div>;
+  );
 }

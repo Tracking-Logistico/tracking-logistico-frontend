@@ -1,4 +1,8 @@
-import type { DeliveryEvent, OfflineDeliveryEvent, SyncResult } from "@/types/api";
+import type {
+  DeliveryEvent,
+  OfflineDeliveryEvent,
+  SyncResult,
+} from "@/types/api";
 
 const STORAGE_KEY = "logistrack-driver-delivery-queue";
 export const OFFLINE_QUEUE_LIMIT = 100;
@@ -9,7 +13,7 @@ function readQueue(): OfflineDeliveryEvent[] {
     const value = localStorage.getItem(STORAGE_KEY);
     if (!value) return [];
     const parsed: unknown = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed as OfflineDeliveryEvent[] : [];
+    return Array.isArray(parsed) ? (parsed as OfflineDeliveryEvent[]) : [];
   } catch {
     return [];
   }
@@ -27,7 +31,9 @@ export function getOfflineQueue() {
 export function enqueueDelivery(pedidoId: number, evento: DeliveryEvent) {
   const queue = readQueue();
   if (queue.length >= OFFLINE_QUEUE_LIMIT) {
-    throw new Error("La cola sin conexión está llena. Conéctate a internet para sincronizar antes de registrar otra entrega.");
+    throw new Error(
+      "La cola sin conexión está llena. Conéctate a internet para sincronizar antes de registrar otra entrega.",
+    );
   }
   const item = { pedidoId, evento, queuedAt: new Date().toISOString() };
   writeQueue([...queue, item]);
@@ -35,7 +41,9 @@ export function enqueueDelivery(pedidoId: number, evento: DeliveryEvent) {
 }
 
 export function removeOfflineEvents(ids: Set<string>) {
-  writeQueue(readQueue().filter(item => !ids.has(item.evento.idEventoCliente)));
+  writeQueue(
+    readQueue().filter((item) => !ids.has(item.evento.idEventoCliente)),
+  );
 }
 
 export function getOfflineQueueAgeMs() {
@@ -44,13 +52,21 @@ export function getOfflineQueueAgeMs() {
 }
 
 export function isNetworkError(error: unknown) {
-  return error instanceof TypeError || (
-    typeof error === "object" && error !== null && !("status" in error)
+  return (
+    error instanceof TypeError ||
+    (typeof error === "object" && error !== null && !("status" in error))
   );
 }
 
 export function acceptedSyncResults(results: SyncResult[]) {
-  return new Set(results
-    .filter(result => result.estado === "APLICADO" || result.estado === "DUPLICADO" || result.estado === "RECHAZADO")
-    .map(result => result.idEventoCliente));
+  return new Set(
+    results
+      .filter(
+        (result) =>
+          result.estado === "APLICADO" ||
+          result.estado === "DUPLICADO" ||
+          result.estado === "RECHAZADO",
+      )
+      .map((result) => result.idEventoCliente),
+  );
 }

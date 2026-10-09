@@ -78,7 +78,7 @@ export function AppSidebar({ role, onSignOut }: AppSidebarProps) {
           : "Usuario";
 
   const itemsPermitidos = NAV_ITEMS.filter(
-    (item) => role && item.roles.includes(role)
+    (item) => role && item.roles.includes(role),
   );
 
   return (
@@ -89,8 +89,12 @@ export function AppSidebar({ role, onSignOut }: AppSidebarProps) {
             <PackageCheck className="size-5" />
           </span>
           <div className="truncate">
-            <p className="font-semibold tracking-tight text-sidebar-foreground">LogisTrack</p>
-            <p className="text-xs text-sidebar-foreground/60">Centro operativo</p>
+            <p className="font-semibold tracking-tight text-sidebar-foreground">
+              LogisTrack
+            </p>
+            <p className="text-xs text-sidebar-foreground/60">
+              Centro operativo
+            </p>
           </div>
         </div>
       </SidebarHeader>
@@ -120,7 +124,11 @@ export function AppSidebar({ role, onSignOut }: AppSidebarProps) {
                   className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-sidebar-foreground/75 transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:bg-sidebar-primary data-[active=true]:font-semibold data-[active=true]:text-sidebar-primary-foreground"
                 >
                   <Icon className="size-4 shrink-0" />
-                  <span>{role === "CLIENTE" && to === "/panel/pedidos" ? "Mis envíos" : label}</span>
+                  <span>
+                    {role === "CLIENTE" && to === "/panel/pedidos"
+                      ? "Mis envíos"
+                      : label}
+                  </span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             );
@@ -129,10 +137,7 @@ export function AppSidebar({ role, onSignOut }: AppSidebarProps) {
           <SidebarMenuItem>
             <SidebarMenuButton
               render={
-                <NavLink
-                  to="/panel/configuracion"
-                  onClick={handleLinkClick}
-                />
+                <NavLink to="/panel/configuracion" onClick={handleLinkClick} />
               }
               isActive={location.pathname.startsWith("/panel/configuracion")}
               className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-sidebar-foreground/75 transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:bg-sidebar-primary data-[active=true]:font-semibold data-[active=true]:text-sidebar-primary-foreground"
@@ -148,7 +153,9 @@ export function AppSidebar({ role, onSignOut }: AppSidebarProps) {
         <p className="px-3 text-xs uppercase tracking-[0.16em] text-sidebar-foreground/50">
           Sesión activa
         </p>
-        <p className="mt-1 px-3 text-sm font-medium text-sidebar-foreground">{rolTexto}</p>
+        <p className="mt-1 px-3 text-sm font-medium text-sidebar-foreground">
+          {rolTexto}
+        </p>
         <button
           type="button"
           onClick={() => {

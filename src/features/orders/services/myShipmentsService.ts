@@ -11,6 +11,9 @@ export interface MyShipmentsQuery {
   fechaHasta?: string;
 }
 
-export function getMyShipments(query: MyShipmentsQuery, token: string): Promise<PageResponse<MyOrderResponse>> {
+export function getMyShipments(
+  query: MyShipmentsQuery,
+  token: string,
+): Promise<PageResponse<MyOrderResponse>> {
   return api.myOrders(query, token);
 }

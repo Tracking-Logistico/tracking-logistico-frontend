@@ -11,7 +11,8 @@ import {
 import { RegistrationSuccess } from "@/features/auth/components/RegistrationSuccess";
 import { toast } from "sonner";
 
-const passwordPattern = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/;
+const passwordPattern =
+  /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/;
 const TERMS_VERSION = "2026-09";
 const PRIVACY_VERSION = "2026-09";
 
@@ -34,7 +35,7 @@ function passwordStrength(password: string) {
 export function RegisterPage() {
   usePageMeta(
     "Registro de cliente",
-    "Crea una cuenta de cliente para gestionar tus envíos."
+    "Crea una cuenta de cliente para gestionar tus envíos.",
   );
   const [form, setForm] = useState<RegisterFormValues>({
     nombre: "",
@@ -53,12 +54,10 @@ export function RegisterPage() {
 
   const strength = useMemo(
     () => passwordStrength(form.password),
-    [form.password]
+    [form.password],
   );
-  const update = (
-    key: keyof RegisterFormValues,
-    value: string | boolean
-  ) => setForm((current) => ({ ...current, [key]: value }));
+  const update = (key: keyof RegisterFormValues, value: string | boolean) =>
+    setForm((current) => ({ ...current, [key]: value }));
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -86,7 +85,8 @@ export function RegisterPage() {
       return;
     }
     if (!form.aceptoTerminos || !form.aceptoPoliticaDatos) {
-      const msg = "Debes aceptar los Términos y la Política de Tratamiento de Datos.";
+      const msg =
+        "Debes aceptar los Términos y la Política de Tratamiento de Datos.";
       setError(msg);
       toast.error(msg);
       return;

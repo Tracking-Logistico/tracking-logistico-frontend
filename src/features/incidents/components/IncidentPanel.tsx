@@ -19,7 +19,9 @@ const statusLabels: Record<string, string> = {
 };
 
 function statusName(status: OrderStatus | null) {
-  return status ? (statusLabels[status] ?? status.replaceAll("_", " ")) : "Sin cambio de estado";
+  return status
+    ? (statusLabels[status] ?? status.replaceAll("_", " "))
+    : "Sin cambio de estado";
 }
 
 function incidentError(error: unknown) {
@@ -27,7 +29,8 @@ function incidentError(error: unknown) {
     const status = (error as { status?: number }).status;
     const code =
       "details" in error &&
-      typeof (error as { details?: { code?: unknown } }).details?.code === "string"
+      typeof (error as { details?: { code?: unknown } }).details?.code ===
+        "string"
         ? (error as { details: { code: string } }).details.code
         : "";
     if (status === 401) return "Tu sesión expiró. Inicia sesión nuevamente.";
@@ -58,7 +61,13 @@ export function IncidentPanel({
   typesError: unknown;
   onChanged: () => Promise<void>;
 }) {
-  const { data, loading, error: incidentsError, reload, register } = useIncidents(orderId, token);
+  const {
+    data,
+    loading,
+    error: incidentsError,
+    reload,
+    register,
+  } = useIncidents(orderId, token);
   const [open, setOpen] = useState(false);
   const [type, setType] = useState("");
   const [comment, setComment] = useState("");
@@ -77,7 +86,10 @@ export function IncidentPanel({
     setSaving(true);
     setError("");
     try {
-      await register({ tipo: selectedType.codigo, comentario: comment.trim() || undefined });
+      await register({
+        tipo: selectedType.codigo,
+        comentario: comment.trim() || undefined,
+      });
       setComment("");
       setType("");
       setOpen(false);
@@ -86,8 +98,12 @@ export function IncidentPanel({
     } catch (err) {
       const message = incidentError(err);
       setError(message);
-      if (typeof err === "object" && err !== null && "status" in err &&
-          (err as { status?: number }).status === 409) {
+      if (
+        typeof err === "object" &&
+        err !== null &&
+        "status" in err &&
+        (err as { status?: number }).status === 409
+      ) {
         await reload();
         await onChanged();
       }
@@ -101,13 +117,20 @@ export function IncidentPanel({
     <section className="mt-5 border-t border-slate-100 pt-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="font-semibold text-slate-900">Incidencias del envío</h3>
+          <h3 className="font-semibold text-slate-900">
+            Incidencias del envío
+          </h3>
           <p className="mt-1 text-sm text-slate-500">
             Registra una novedad usando el catálogo oficial.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" variant="ghost" onClick={() => void reload()} disabled={loading}>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => void reload()}
+            disabled={loading}
+          >
             <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} />
             Actualizar
           </Button>
@@ -121,28 +144,61 @@ export function IncidentPanel({
         </div>
       </div>
 
-      {typesError !== null && <Alert variant="destructive" className="mt-3">{incidentError(typesError)}</Alert>}
-      {incidentsError !== null && <Alert variant="destructive" className="mt-3">{incidentError(incidentsError)}</Alert>}
-      {error !== "" && <Alert variant="destructive" className="mt-3">{error}</Alert>}
+      {typesError !== null && (
+        <Alert variant="destructive" className="mt-3">
+          {incidentError(typesError)}
+        </Alert>
+      )}
+      {incidentsError !== null && (
+        <Alert variant="destructive" className="mt-3">
+          {incidentError(incidentsError)}
+        </Alert>
+      )}
+      {error !== "" && (
+        <Alert variant="destructive" className="mt-3">
+          {error}
+        </Alert>
+      )}
 
       {open && (
-        <form onSubmit={(event) => void submit(event)} className="mt-4 grid gap-4 rounded-xl bg-slate-50 p-4">
+        <form
+          onSubmit={(event) => void submit(event)}
+          className="mt-4 grid gap-4 rounded-xl bg-slate-50 p-4"
+        >
           <div>
-            <label htmlFor={`incident-type-${orderId}`} className="text-sm font-medium">Tipo de incidencia</label>
+            <label
+              htmlFor={`incident-type-${orderId}`}
+              className="text-sm font-medium"
+            >
+              Tipo de incidencia
+            </label>
             <select
               id={`incident-type-${orderId}`}
               className={`${inputClass} mt-2`}
               value={type}
-              onChange={(event) => { setType(event.target.value); setError(""); }}
+              onChange={(event) => {
+                setType(event.target.value);
+                setError("");
+              }}
               required
             >
               <option value="">Selecciona un tipo</option>
-              {types.map((item) => <option key={item.codigo} value={item.codigo}>{item.descripcion}</option>)}
+              {types.map((item) => (
+                <option key={item.codigo} value={item.codigo}>
+                  {item.descripcion}
+                </option>
+              ))}
             </select>
           </div>
           <div>
-            <label htmlFor={`incident-comment-${orderId}`} className="text-sm font-medium">
-              Comentario {selectedType?.requiereComentario ? "(obligatorio)" : "(opcional)"}
+            <label
+              htmlFor={`incident-comment-${orderId}`}
+              className="text-sm font-medium"
+            >
+              Comentario{" "}
+              {selectedType?.requiereComentario
+                ? "(obligatorio)"
+                : "(opcional)"}
             </label>
             <textarea
               id={`incident-comment-${orderId}`}
@@ -152,14 +208,27 @@ export function IncidentPanel({
               onChange={(event) => setComment(event.target.value)}
               placeholder="Describe la situación"
             />
-            <p className="mt-1 text-right text-xs text-slate-500">{comment.length}/500</p>
+            <p className="mt-1 text-right text-xs text-slate-500">
+              {comment.length}/500
+            </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button type="submit" disabled={saving || !selectedType}>
-              {saving ? <LoaderCircle className="size-4 animate-spin" /> : <Plus className="size-4" />}
+              {saving ? (
+                <LoaderCircle className="size-4 animate-spin" />
+              ) : (
+                <Plus className="size-4" />
+              )}
               {saving ? "Registrando..." : "Registrar"}
             </Button>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={saving}>Cancelar</Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={saving}
+            >
+              Cancelar
+            </Button>
           </div>
         </form>
       )}
@@ -168,20 +237,37 @@ export function IncidentPanel({
         <p className="flex items-center gap-2 text-sm font-medium text-slate-700">
           <History className="size-4" /> Historial
         </p>
-        {loading && <div className="mt-3 space-y-2"><Skeleton className="h-14 w-full" /><Skeleton className="h-14 w-full" /></div>}
-        {!loading && data?.incidencias.length === 0 && <p className="mt-3 text-sm text-slate-500">No hay incidencias registradas.</p>}
+        {loading && (
+          <div className="mt-3 space-y-2">
+            <Skeleton className="h-14 w-full" />
+            <Skeleton className="h-14 w-full" />
+          </div>
+        )}
+        {!loading && data?.incidencias.length === 0 && (
+          <p className="mt-3 text-sm text-slate-500">
+            No hay incidencias registradas.
+          </p>
+        )}
         {!loading && data && data.incidencias.length > 0 && (
           <div className="mt-3 space-y-3">
             {data.incidencias.map((incident) => (
-              <div key={incident.id} className="rounded-lg border border-slate-200 bg-white p-3 text-sm">
+              <div
+                key={incident.id}
+                className="rounded-lg border border-slate-200 bg-white p-3 text-sm"
+              >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="font-medium">{incident.descripcionTipo}</p>
                   <Badge>{new Date(incident.fecha).toLocaleString()}</Badge>
                 </div>
-                {incident.comentario && <p className="mt-2 text-slate-600">{incident.comentario}</p>}
+                {incident.comentario && (
+                  <p className="mt-2 text-slate-600">{incident.comentario}</p>
+                )}
                 <p className="mt-2 text-xs text-slate-500">
-                  Estado: {statusName(incident.estadoResultante)} · Usuario {incident.reportadoPorUsuarioId}
-                  {incident.numeroIntento ? ` · Intento ${incident.numeroIntento}` : ""}
+                  Estado: {statusName(incident.estadoResultante)} · Usuario{" "}
+                  {incident.reportadoPorUsuarioId}
+                  {incident.numeroIntento
+                    ? ` · Intento ${incident.numeroIntento}`
+                    : ""}
                 </p>
               </div>
             ))}

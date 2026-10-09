@@ -30,7 +30,10 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/registro" element={<RegisterPage />} />
           <Route path="/terminos" element={<LegalPage kind="terms" />} />
-          <Route path="/politica-datos" element={<LegalPage kind="privacy" />} />
+          <Route
+            path="/politica-datos"
+            element={<LegalPage kind="privacy" />}
+          />
           <Route path="/recuperar-password" element={<ForgotPasswordPage />} />
           <Route path="/verificar" element={<VerifyPage />} />
           <Route
@@ -55,7 +58,11 @@ export default function App() {
               <Route path="/panel/pedidos" element={<OrdersPage />} />
             </Route>
             <Route element={<ProtectedRoute roles={["CLIENTE"]} />}>
-              <Route path="/panel/pedidos/seguimiento/:numeroTracking" element={<ShipmentTrackingPage />} />
+              <Route
+                path="/panel/pedidos/seguimiento/:numeroTracking"
+                element={<ShipmentTrackingPage />}
+              />
+              <Route path="/tracking" element={<ShipmentTrackingPage />} />
             </Route>
             <Route element={<ProtectedRoute roles={["OPERADOR"]} />}>
               <Route path="/panel/envios" element={<ShipmentsPage />} />
@@ -88,8 +95,13 @@ function PublicLayout() {
 
 function RoleHomeRedirect() {
   const role = useAuthStore((state) => state.role);
-  const home = role === "CLIENTE" ? "/panel/cliente"
-    : role === "OPERADOR" ? "/panel/operador"
-    : role === "CONDUCTOR" ? "/panel/conductor" : "/login";
+  const home =
+    role === "CLIENTE"
+      ? "/panel/cliente"
+      : role === "OPERADOR"
+        ? "/panel/operador"
+        : role === "CONDUCTOR"
+          ? "/panel/conductor"
+          : "/login";
   return <Navigate to={home} replace />;
 }

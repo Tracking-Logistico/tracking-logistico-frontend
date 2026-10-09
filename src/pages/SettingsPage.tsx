@@ -12,6 +12,7 @@ import { ChangePasswordDialog } from "@/features/settings/components/ChangePassw
 import { DeactivateAccountDialog } from "@/features/settings/components/DeactivateAccountDialog";
 import { EditProfileDialog } from "@/features/settings/components/EditProfileDialog";
 import { ProfileSummary } from "@/features/settings/components/ProfileSummary";
+import { NotificationPreferences } from "@/features/settings/components/NotificationPreferences";
 
 interface Perfil {
   nombre: string;
@@ -27,22 +28,36 @@ interface Password {
 
 export function SettingsPage() {
   usePageMeta("Configuración", "Seguridad y datos de tu cuenta en LogisTrack.");
-  const { role, userId, accessToken, requiresPasswordChange, clearSession } = useAuthStore();
-  const [password, setPassword] = useState<Password>({ actual: "", nueva: "", confirmacion: "" });
-  const [profile, setProfile] = useState<Perfil>({ nombre: "", telefono: "", direccion: "" });
+  const { role, userId, accessToken, requiresPasswordChange, clearSession } =
+    useAuthStore();
+  const [password, setPassword] = useState<Password>({
+    actual: "",
+    nueva: "",
+    confirmacion: "",
+  });
+  const [profile, setProfile] = useState<Perfil>({
+    nombre: "",
+    telefono: "",
+    direccion: "",
+  });
   const [loading, setLoading] = useState(false);
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
-  const [passwordDialogOpen, setPasswordDialogOpen] = useState(requiresPasswordChange);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(
+    requiresPasswordChange,
+  );
   const navigate = useNavigate();
 
   useEffect(() => {
     if (role === "CLIENTE" && accessToken && !requiresPasswordChange) {
-      api.myProfile(accessToken)
-        .then((profileResponse) => setProfile({
-          nombre: profileResponse.nombre,
-          telefono: profileResponse.telefono ?? "",
-          direccion: profileResponse.direccion ?? "",
-        }))
+      api
+        .myProfile(accessToken)
+        .then((profileResponse) =>
+          setProfile({
+            nombre: profileResponse.nombre,
+            telefono: profileResponse.telefono ?? "",
+            direccion: profileResponse.direccion ?? "",
+          }),
+        )
         .catch(() => undefined);
     }
   }, [role, accessToken, requiresPasswordChange]);
@@ -59,15 +74,25 @@ export function SettingsPage() {
     }
     setLoading(true);
     try {
-      await api.changePassword(userId, password.actual, password.nueva, password.confirmacion, accessToken);
-      toast.success("Contraseña actualizada. Inicia sesión nuevamente con tu contraseña definitiva.");
+      await api.changePassword(
+        userId,
+        password.actual,
+        password.nueva,
+        password.confirmacion,
+        accessToken,
+      );
+      toast.success(
+        "Contraseña actualizada. Inicia sesión nuevamente con tu contraseña definitiva.",
+      );
       setPasswordDialogOpen(false);
       setTimeout(() => {
         clearSession();
         navigate("/login", { replace: true });
       }, 800);
     } catch (error) {
-      toast.error(getApiError(error, "No fue posible actualizar la contraseña."));
+      toast.error(
+        getApiError(error, "No fue posible actualizar la contraseña."),
+      );
     } finally {
       setLoading(false);
     }
@@ -104,30 +129,67 @@ export function SettingsPage() {
   return (
     <div className="mx-auto max-w-4xl px-5 py-8 sm:px-8 lg:px-10">
       {!requiresPasswordChange && (
-        <Link to="/panel" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="size-4" />Volver al resumen
+        <Link
+          to="/panel"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="size-4" />
+          Volver al resumen
         </Link>
       )}
       <h1 className="mt-8 text-3xl font-semibold tracking-tight">
         {requiresPasswordChange ? "Activa tu cuenta" : "Configuración"}
       </h1>
       <p className="mt-3 text-sm text-muted-foreground">
-        {requiresPasswordChange ? "Por seguridad debes cambiar la contraseña temporal antes de continuar." : `Sesión activa con rol ${role}.`}
+        {requiresPasswordChange
+          ? "Por seguridad debes cambiar la contraseña temporal antes de continuar."
+          : `Sesión activa con rol ${role}.`}
       </p>
 
       {!requiresPasswordChange && (
         <>
           <div className="mt-8">
-            <ProfileSummary profile={profile} role={role} onEdit={() => setProfileDialogOpen(true)} />
+            <ProfileSummary
+              profile={profile}
+              role={role}
+              onEdit={() => setProfileDialogOpen(true)}
+            />
           </div>
+          {role === "CLIENTE" && (
+            <div className="mt-6">
+              <NotificationPreferences
+                token={accessToken}
+                defaultPhone={profile.telefono}
+              />
+            </div>
+          )}
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <Card>
-              <CardHeader><CardTitle className="flex items-center gap-2"><KeyRound className="size-5 text-emerald-700" />Seguridad</CardTitle></CardHeader>
-              <CardContent><Button variant="outline" onClick={() => setPasswordDialogOpen(true)}>Cambiar contraseña</Button></CardContent>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <KeyRound className="size-5 text-emerald-700" />
+                  Seguridad
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Button
+                  variant="outline"
+                  onClick={() => setPasswordDialogOpen(true)}
+                >
+                  Cambiar contraseña
+                </Button>
+              </CardContent>
             </Card>
             <Card>
-              <CardHeader><CardTitle>Cuenta</CardTitle></CardHeader>
-              <CardContent><DeactivateAccountDialog onConfirm={deactivate} loading={loading} /></CardContent>
+              <CardHeader>
+                <CardTitle>Cuenta</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <DeactivateAccountDialog
+                  onConfirm={deactivate}
+                  loading={loading}
+                />
+              </CardContent>
             </Card>
           </div>
         </>

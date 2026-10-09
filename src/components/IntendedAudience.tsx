@@ -1,7 +1,4 @@
-import {
-  MapPin,
-  Users,
-} from "lucide-react";
+import { MapPin, Users } from "lucide-react";
 
 export const IntendedAudience = () => {
   return (

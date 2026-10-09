@@ -15,7 +15,7 @@ import {
 } from "@/features/driver/services/offlineDeliveryQueue";
 
 export function useOfflineDeliveryQueue() {
-  const token = useAuthStore(state => state.accessToken);
+  const token = useAuthStore((state) => state.accessToken);
   const [isOnline, setIsOnline] = useState(() => navigator.onLine);
   const [queue, setQueue] = useState<OfflineDeliveryEvent[]>(getOfflineQueue);
 
@@ -30,12 +30,17 @@ export function useOfflineDeliveryQueue() {
       const accepted = acceptedSyncResults(response.resultados);
       removeOfflineEvents(accepted);
       response.resultados
-        .filter(result => result.estado === "RECHAZADO")
-        .forEach(result => toast.error(`Evento no sincronizado: ${result.motivoRechazo ?? "el servidor lo rechazó."}`));
+        .filter((result) => result.estado === "RECHAZADO")
+        .forEach((result) =>
+          toast.error(
+            `Evento no sincronizado: ${result.motivoRechazo ?? "el servidor lo rechazó."}`,
+          ),
+        );
       refreshQueue();
       window.dispatchEvent(new CustomEvent("logistrack-driver-refresh"));
     } catch (error) {
-      if (!isNetworkError(error)) toast.error("No fue posible sincronizar las entregas pendientes.");
+      if (!isNetworkError(error))
+        toast.error("No fue posible sincronizar las entregas pendientes.");
     }
   }, [refreshQueue, token]);
 
@@ -56,19 +61,36 @@ export function useOfflineDeliveryQueue() {
     };
   }, [refreshQueue, synchronize]);
 
-  const queueEvent = useCallback((pedidoId: number, evento: DeliveryEvent) => {
-    const item = enqueueDelivery(pedidoId, evento);
-    refreshQueue();
-    const count = getOfflineQueue().length;
-    if (count === 80) toast.warning("Tienes 80 eventos pendientes sin conexión.");
-    return item;
-  }, [refreshQueue]);
+  const queueEvent = useCallback(
+    (pedidoId: number, evento: DeliveryEvent) => {
+      const item = enqueueDelivery(pedidoId, evento);
+      refreshQueue();
+      const count = getOfflineQueue().length;
+      if (count === 80)
+        toast.warning("Tienes 80 eventos pendientes sin conexión.");
+      return item;
+    },
+    [refreshQueue],
+  );
 
-  const ageWarning = queue.length > 0 && getOfflineQueueAgeMs() >= OFFLINE_EVENT_MAX_AGE_MS - 4 * 60 * 60 * 1000;
+  const ageWarning =
+    queue.length > 0 &&
+    getOfflineQueueAgeMs() >= OFFLINE_EVENT_MAX_AGE_MS - 4 * 60 * 60 * 1000;
   const limitReached = queue.length >= OFFLINE_QUEUE_LIMIT;
   useEffect(() => {
-    if (ageWarning) toast.warning("Hay un evento pendiente próximo a cumplir 24 horas sin sincronizar.");
+    if (ageWarning)
+      toast.warning(
+        "Hay un evento pendiente próximo a cumplir 24 horas sin sincronizar.",
+      );
   }, [ageWarning]);
 
-  return { isOnline, pendingEvents: queue.length, queue, queueEvent, synchronize, limitReached, ageWarning };
+  return {
+    isOnline,
+    pendingEvents: queue.length,
+    queue,
+    queueEvent,
+    synchronize,
+    limitReached,
+    ageWarning,
+  };
 }

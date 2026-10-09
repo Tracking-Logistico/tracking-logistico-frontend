@@ -19,7 +19,11 @@ export function ProfileSummary({ profile, role, onEdit }: ProfileSummaryProps) {
   return (
     <Card>
       <CardHeader className="flex-row items-center gap-4">
-        <Avatar><AvatarFallback><UserRound className="size-7" /></AvatarFallback></Avatar>
+        <Avatar>
+          <AvatarFallback>
+            <UserRound className="size-7" />
+          </AvatarFallback>
+        </Avatar>
         <div>
           <CardTitle>{profile.nombre || "Tu perfil"}</CardTitle>
           <p className="text-sm text-muted-foreground">{role ?? "Usuario"}</p>
@@ -28,10 +32,20 @@ export function ProfileSummary({ profile, role, onEdit }: ProfileSummaryProps) {
       <CardContent>
         <Separator className="mb-4" />
         <div className="grid gap-3 text-sm sm:grid-cols-2">
-          <p className="flex items-center gap-2 text-muted-foreground"><Phone className="size-4" />{profile.telefono || "Sin teléfono"}</p>
-          <p className="flex items-center gap-2 text-muted-foreground"><MapPin className="size-4" />{profile.direccion || "Sin dirección"}</p>
+          <p className="flex items-center gap-2 text-muted-foreground">
+            <Phone className="size-4" />
+            {profile.telefono || "Sin teléfono"}
+          </p>
+          <p className="flex items-center gap-2 text-muted-foreground">
+            <MapPin className="size-4" />
+            {profile.direccion || "Sin dirección"}
+          </p>
         </div>
-        <button type="button" onClick={onEdit} className="mt-5 text-sm font-medium text-emerald-700 hover:text-emerald-800">
+        <button
+          type="button"
+          onClick={onEdit}
+          className="mt-5 text-sm font-medium text-emerald-700 hover:text-emerald-800"
+        >
           Editar datos
         </button>
       </CardContent>

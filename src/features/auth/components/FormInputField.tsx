@@ -40,8 +40,9 @@ export function FormInputField({
           className={cn(
             "h-11 rounded-lg border-slate-200 bg-white px-3 text-sm text-slate-950 placeholder:text-slate-400 focus-visible:border-emerald-500 focus-visible:ring-emerald-500/20",
             endAdornment && "pr-10",
-            error && "border-rose-400 focus-visible:border-rose-500 focus-visible:ring-rose-500/20",
-            className
+            error &&
+              "border-rose-400 focus-visible:border-rose-500 focus-visible:ring-rose-500/20",
+            className,
           )}
           {...props}
         />
@@ -57,7 +58,10 @@ export function FormInputField({
         </p>
       )}
       {error && (
-        <p id={`${inputId}-error`} className="text-xs font-medium text-rose-600">
+        <p
+          id={`${inputId}-error`}
+          className="text-xs font-medium text-rose-600"
+        >
           {error}
         </p>
       )}

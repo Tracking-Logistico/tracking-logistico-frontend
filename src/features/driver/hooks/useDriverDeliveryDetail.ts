@@ -19,12 +19,19 @@ export function useDriverDeliveryDetail(pedidoId: number | null) {
       setDetail(null);
       setError("");
     });
-    void api.driverDeliveryDetail(pedidoId, token)
+    void api
+      .driverDeliveryDetail(pedidoId, token)
       .then((response) => {
         if (!cancelled) setDetail(response);
       })
       .catch((reason: unknown) => {
-        if (!cancelled) setError(getApiError(reason, "No fue posible cargar la información del envío."));
+        if (!cancelled)
+          setError(
+            getApiError(
+              reason,
+              "No fue posible cargar la información del envío.",
+            ),
+          );
       })
       .finally(() => {
         if (!cancelled) setLoading(false);

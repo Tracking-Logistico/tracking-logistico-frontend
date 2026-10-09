@@ -59,8 +59,8 @@ export function RegisterForm({
           Crea tu cuenta de cliente
         </CardTitle>
         <CardDescription className="text-sm leading-6 text-slate-500">
-          Regístrate para solicitar envíos y consultar su avance. La verificación
-          del correo es opcional y no bloquea tu acceso.
+          Regístrate para solicitar envíos y consultar su avance. La
+          verificación del correo es opcional y no bloquea tu acceso.
         </CardDescription>
       </CardHeader>
       <form onSubmit={onSubmit}>
@@ -132,9 +132,15 @@ export function RegisterForm({
                   tabIndex={-1}
                   className="text-slate-400 hover:text-slate-700"
                   onClick={() => setShowPassword(!showPassword)}
-                  aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                  aria-label={
+                    showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+                  }
                 >
-                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  {showPassword ? (
+                    <EyeOff className="size-4" />
+                  ) : (
+                    <Eye className="size-4" />
+                  )}
                 </button>
               }
             />
@@ -152,15 +158,26 @@ export function RegisterForm({
                   tabIndex={-1}
                   className="text-slate-400 hover:text-slate-700"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  aria-label={showConfirmPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                  aria-label={
+                    showConfirmPassword
+                      ? "Ocultar contraseña"
+                      : "Mostrar contraseña"
+                  }
                 >
-                  {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  {showConfirmPassword ? (
+                    <EyeOff className="size-4" />
+                  ) : (
+                    <Eye className="size-4" />
+                  )}
                 </button>
               }
             />
           </div>
 
-          <PasswordStrengthMeter label={strength.label} width={strength.width} />
+          <PasswordStrengthMeter
+            label={strength.label}
+            width={strength.width}
+          />
 
           <Separator className="my-1 bg-slate-100" />
 
@@ -200,7 +217,10 @@ export function RegisterForm({
           </div>
 
           {error && (
-            <Alert variant="destructive" className="border-rose-200 bg-rose-50 text-rose-800">
+            <Alert
+              variant="destructive"
+              className="border-rose-200 bg-rose-50 text-rose-800"
+            >
               <ShieldAlert className="size-4 text-rose-600" />
               <AlertDescription className="text-rose-700">
                 {error}
@@ -212,7 +232,10 @@ export function RegisterForm({
         <CardFooter className="flex flex-col-reverse gap-4 border-t border-slate-100 pt-6 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-slate-500">
             ¿Ya tienes cuenta?{" "}
-            <Link to="/login" className="font-medium text-emerald-700 hover:underline">
+            <Link
+              to="/login"
+              className="font-medium text-emerald-700 hover:underline"
+            >
               Inicia sesión
             </Link>
           </p>

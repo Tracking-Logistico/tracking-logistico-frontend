@@ -32,6 +32,8 @@ import type {
   IncidentsResponse,
   RegisterIncidentPayload,
   RegisterIncidentResponse,
+  NotificationPreference,
+  UpdateNotificationPreferencePayload,
 } from "@/types/api";
 
 const API_URL = (
@@ -200,6 +202,17 @@ export const api = {
     ),
   deactivateMyAccount: (token: string) =>
     request<void>("/clientes/me", { method: "DELETE" }, token),
+  getNotificationPreference: (token: string) =>
+    request<NotificationPreference>("/notificaciones/preferencias", {}, token),
+  updateNotificationPreference: (
+    payload: UpdateNotificationPreferencePayload,
+    token: string,
+  ) =>
+    request<NotificationPreference>(
+      "/notificaciones/preferencias",
+      { method: "PUT", body: JSON.stringify(payload) },
+      token,
+    ),
 
   createOrder: (payload: ReceiveOrderPayload, token: string) =>
     request<OrderResponse>(

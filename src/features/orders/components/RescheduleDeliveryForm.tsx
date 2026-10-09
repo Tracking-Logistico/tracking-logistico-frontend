@@ -69,7 +69,11 @@ export function RescheduleDeliveryForm({
               <AlertDescription>{validationError || error}</AlertDescription>
             </Alert>
           )}
-          <Button type="submit" className="min-h-11 w-full sm:w-auto" disabled={loading}>
+          <Button
+            type="submit"
+            className="min-h-11 w-full sm:w-auto"
+            disabled={loading}
+          >
             {loading ? "Solicitando..." : "Confirmar nueva fecha"}
           </Button>
         </form>

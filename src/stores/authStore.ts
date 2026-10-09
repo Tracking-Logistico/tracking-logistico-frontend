@@ -35,15 +35,16 @@ export const useAuthStore = create<AuthState>()(
       ...empty,
       isHydrated: false,
       setHydrated: (isHydrated) => set({ isHydrated }),
-      applySession: (session) => set({
-        accessToken: session.accessToken,
-        refreshToken: session.refreshToken,
-        role: session.rol,
-        panel: session.panel,
-        userId: session.usuarioId,
-        requiresPasswordChange: session.requiereCambioPassword,
-        accessTokenExpiresAt: session.accessTokenExpiresAt,
-      }),
+      applySession: (session) =>
+        set({
+          accessToken: session.accessToken,
+          refreshToken: session.refreshToken,
+          role: session.rol,
+          panel: session.panel,
+          userId: session.usuarioId,
+          requiresPasswordChange: session.requiereCambioPassword,
+          accessTokenExpiresAt: session.accessTokenExpiresAt,
+        }),
       signIn: async (email, password) => {
         const session = await api.login(email, password);
         get().applySession(session);
@@ -51,10 +52,17 @@ export const useAuthStore = create<AuthState>()(
       },
       signOut: async () => {
         const token = get().accessToken;
-        try { if (token) await api.logout(token); } finally { set(empty); }
+        try {
+          if (token) await api.logout(token);
+        } finally {
+          set(empty);
+        }
       },
       clearSession: () => set(empty),
     }),
-    { name: "logistrack-session", onRehydrateStorage: () => (state) => state?.setHydrated(true) },
+    {
+      name: "logistrack-session",
+      onRehydrateStorage: () => (state) => state?.setHydrated(true),
+    },
   ),
 );

@@ -8,7 +8,8 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ roles }: ProtectedRouteProps) {
   const location = useLocation();
-  const { accessToken, role, isHydrated, requiresPasswordChange } = useAuthStore();
+  const { accessToken, role, isHydrated, requiresPasswordChange } =
+    useAuthStore();
 
   if (!isHydrated) {
     return (

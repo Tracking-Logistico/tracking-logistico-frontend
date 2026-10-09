@@ -1,10 +1,19 @@
 import { useCallback, useEffect, useState } from "react";
 import { getApiError } from "@/lib/api";
 import type { MyOrderResponse, OrderStatus, PageResponse } from "@/types/api";
-import { getMyShipments, type MyShipmentsQuery } from "../services/myShipmentsService";
+import {
+  getMyShipments,
+  type MyShipmentsQuery,
+} from "../services/myShipmentsService";
 
 const emptyPage: PageResponse<MyOrderResponse> = {
-  content: [], totalPages: 0, totalElements: 0, size: 20, number: 0, first: true, last: true,
+  content: [],
+  totalPages: 0,
+  totalElements: 0,
+  size: 20,
+  number: 0,
+  first: true,
+  last: true,
 };
 
 export interface MyShipmentsFilters {
@@ -17,7 +26,11 @@ export interface MyShipmentsFilters {
 
 export function useMyShipments(token: string | null) {
   const [filters, setFilters] = useState<MyShipmentsFilters>({
-    estado: "", fechaDesde: "", fechaHasta: "", sort: "fechaCreacion", direction: "desc",
+    estado: "",
+    fechaDesde: "",
+    fechaHasta: "",
+    sort: "fechaCreacion",
+    direction: "desc",
   });
   const [page, setPage] = useState(0);
   const [result, setResult] = useState(emptyPage);
@@ -29,7 +42,12 @@ export function useMyShipments(token: string | null) {
     setLoading(true);
     setError("");
     try {
-      setResult(await getMyShipments({ ...filters, page, size: 20, estado: filters.estado || undefined }, token));
+      setResult(
+        await getMyShipments(
+          { ...filters, page, size: 20, estado: filters.estado || undefined },
+          token,
+        ),
+      );
     } catch (err) {
       setError(getApiError(err));
     } finally {
@@ -47,5 +65,14 @@ export function useMyShipments(token: string | null) {
     setFilters((current) => ({ ...current, ...next }));
   }
 
-  return { ...result, filters, loading, error, page, reload: load, updateFilters, setPage };
+  return {
+    ...result,
+    filters,
+    loading,
+    error,
+    page,
+    reload: load,
+    updateFilters,
+    setPage,
+  };
 }

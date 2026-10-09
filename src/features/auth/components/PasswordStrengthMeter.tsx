@@ -3,7 +3,10 @@ interface PasswordStrengthMeterProps {
   width: string;
 }
 
-export function PasswordStrengthMeter({ label, width }: PasswordStrengthMeterProps) {
+export function PasswordStrengthMeter({
+  label,
+  width,
+}: PasswordStrengthMeterProps) {
   const colorClass =
     label === "Fuerte"
       ? "bg-emerald-600"

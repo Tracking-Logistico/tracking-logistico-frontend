@@ -1,5 +1,10 @@
 export type Role = "CLIENTE" | "OPERADOR" | "CONDUCTOR";
-export type UserStatus = "PENDIENTE_ACTIVACION" | "PENDIENTE_VERIFICACION" | "ACTIVO" | "INACTIVO" | "BLOQUEADO";
+export type UserStatus =
+  | "PENDIENTE_ACTIVACION"
+  | "PENDIENTE_VERIFICACION"
+  | "ACTIVO"
+  | "INACTIVO"
+  | "BLOQUEADO";
 
 export interface LoginResponse {
   accessToken: string;
@@ -38,7 +43,24 @@ export interface ClientResponse {
   fechaCreacion: string;
 }
 
-export interface ApiErrorShape { message: string; status: number; details?: Record<string, string>; }
+export type NotificationChannel = "EMAIL" | "SMS" | "AMBOS";
+
+export interface NotificationPreference {
+  canal: NotificationChannel;
+  telefonoSms: string | null;
+  fechaActualizacion: string | null;
+}
+
+export interface UpdateNotificationPreferencePayload {
+  canal: NotificationChannel;
+  telefonoSms: string | null;
+}
+
+export interface ApiErrorShape {
+  message: string;
+  status: number;
+  details?: Record<string, string>;
+}
 export type ServiceType = "ESTANDAR" | "EXPRESS" | "PROGRAMADO";
 export type Priority = "BAJA" | "MEDIA" | "ALTA";
 export type OrderStatus =
@@ -156,8 +178,20 @@ export interface PageResponse<T> {
   last: boolean;
 }
 
-export interface OrderEvent { id: number; usuarioId?: number; tipoEvento: string; campoObservado?: string; detalle?: string; fecha: string; }
-export interface LabelResponse { numeroPedido: string; numeroTracking: string; contenido: string; fechaImpresion: string; }
+export interface OrderEvent {
+  id: number;
+  usuarioId?: number;
+  tipoEvento: string;
+  campoObservado?: string;
+  detalle?: string;
+  fecha: string;
+}
+export interface LabelResponse {
+  numeroPedido: string;
+  numeroTracking: string;
+  contenido: string;
+  fechaImpresion: string;
+}
 export interface IncidentType {
   codigo: string;
   descripcion: string;
@@ -204,7 +238,7 @@ export interface RouteStop {
   id: number;
   pedidoId: number;
   orden: number;
-  estado: 'PENDIENTE' | 'ENTREGADO' | 'CANCELADA';
+  estado: "PENDIENTE" | "ENTREGADO" | "CANCELADA";
   fechaAsignacion: string;
   numeroPedido?: string;
   numeroTracking?: string;
@@ -215,7 +249,12 @@ export interface RouteStop {
   prioridad?: Priority;
   pesoKg?: number;
 }
-export interface RouteResponse { id: number; conductorId: number; fecha: string; paradas: RouteStop[]; }
+export interface RouteResponse {
+  id: number;
+  conductorId: number;
+  fecha: string;
+  paradas: RouteStop[];
+}
 export interface DriverResponse {
   usuarioId: number;
   nombre: string;
@@ -227,15 +266,44 @@ export interface DriverResponse {
   pesoAsignadoKg: number;
   volumenAsignadoCm3: number;
 }
-export interface RouteNotification { id: number; pedidoId: number; mensaje: string; fecha: string; leida: boolean; }
-export interface AssignmentEvent {
-  id: number; pedidoId: number; conductorAnteriorId?: number; conductorNuevoId: number;
-  operadorId: number; accion: 'ASIGNACION' | 'REASIGNACION'; motivo?: string; fecha: string;
+export interface RouteNotification {
+  id: number;
+  pedidoId: number;
+  mensaje: string;
+  fecha: string;
+  leida: boolean;
 }
-export interface UserResponse { id: number; nombre: string; email: string; telefono?: string; direccion?: string; rol: Role; estado: UserStatus; fechaCreacion: string; }
+export interface AssignmentEvent {
+  id: number;
+  pedidoId: number;
+  conductorAnteriorId?: number;
+  conductorNuevoId: number;
+  operadorId: number;
+  accion: "ASIGNACION" | "REASIGNACION";
+  motivo?: string;
+  fecha: string;
+}
+export interface UserResponse {
+  id: number;
+  nombre: string;
+  email: string;
+  telefono?: string;
+  direccion?: string;
+  rol: Role;
+  estado: UserStatus;
+  fechaCreacion: string;
+}
 
-export type DeliveryResult = "ENTREGADO" | "ENTREGA_FALLIDA" | "DEVOLUCION_AL_REMITENTE";
-export type DeliveryState = "PENDIENTE" | "ENTREGADO" | "FALLIDA" | "DEVOLUCION_AL_REMITENTE" | "CANCELADA";
+export type DeliveryResult =
+  | "ENTREGADO"
+  | "ENTREGA_FALLIDA"
+  | "DEVOLUCION_AL_REMITENTE";
+export type DeliveryState =
+  | "PENDIENTE"
+  | "ENTREGADO"
+  | "FALLIDA"
+  | "DEVOLUCION_AL_REMITENTE"
+  | "CANCELADA";
 
 export interface DriverProgress {
   fecha: string;
