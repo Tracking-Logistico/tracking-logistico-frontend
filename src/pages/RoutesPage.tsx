@@ -29,6 +29,7 @@ export function RoutesPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
+
   const refresh = useCallback(async () => {
     if (!token) return;
     setLoading(true);
@@ -56,7 +57,7 @@ export function RoutesPage() {
     finally { setLoading(false); }
   }, [token, role, selectedDriver]);
 
-  useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => { void Promise.resolve().then(refresh); }, [refresh]);
 
   const currentDriver = drivers.find(d => d.usuarioId === selectedDriver);
   const selectedWeight = pending.filter(p => selectedOrders.includes(p.id)).reduce((total,p) => total + p.pesoKg, 0);

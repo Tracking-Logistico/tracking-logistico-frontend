@@ -125,3 +125,112 @@ export interface AssignmentEvent {
   operadorId: number; accion: 'ASIGNACION' | 'REASIGNACION'; motivo?: string; fecha: string;
 }
 export interface UserResponse { id: number; nombre: string; email: string; telefono?: string; direccion?: string; rol: Role; estado: UserStatus; fechaCreacion: string; }
+
+export type DeliveryResult = "ENTREGADO" | "ENTREGA_FALLIDA" | "DEVOLUCION_AL_REMITENTE";
+export type DeliveryState = "PENDIENTE" | "ENTREGADO" | "FALLIDA" | "DEVOLUCION_AL_REMITENTE" | "CANCELADA";
+
+export interface DriverProgress {
+  fecha: string;
+  totalEntregas: number;
+  entregadas: number;
+  pendientes: number;
+  fallidas: number;
+  canceladas: number;
+}
+
+export interface DriverDelivery {
+  idParada: number;
+  pedidoId: number;
+  orden: number;
+  numeroPedido: string;
+  numeroTracking: string;
+  direccionDestino: string;
+  ciudadDestino: string;
+  destinatarioNombre: string;
+  destinatarioTelefono: string;
+  prioridad: Priority;
+  pesoKg: number;
+  estadoParada: DeliveryState;
+  estadoPedido: string;
+}
+
+export interface DriverDeliveryDetail extends DriverDelivery {
+  codigoPostalDestino: string;
+  indicacionesAcceso: string | null;
+  descripcionPaquete: string | null;
+  largoCm: number | null;
+  anchoCm: number | null;
+  altoCm: number | null;
+  observacionesValidacion: string | null;
+  fechaEntregaReprogramada: string | null;
+  ultimosEventos: OrderEvent[];
+}
+
+export interface NextStop {
+  idParada: number;
+  pedidoId: number;
+  orden: number;
+  numeroTracking: string;
+  direccionDestino: string;
+  ciudadDestino: string;
+  destinatarioNombre: string;
+  destinatarioTelefono: string;
+  indicacionesAcceso: string | null;
+  pesoKg: number;
+}
+
+export interface DriverRouteStop {
+  paradaId: number;
+  pedidoId: number;
+  orden: number;
+  direccion: string;
+  ciudad: string;
+  estado: DeliveryState;
+  sinUbicacion: boolean;
+}
+
+export interface DriverRoute {
+  paradas: DriverRouteStop[];
+  siguiente: DriverRouteStop | null;
+}
+
+export interface NoveltyOption {
+  codigo: string;
+  resultado: Exclude<DeliveryResult, "ENTREGADO">;
+  descripcion: string;
+}
+
+export interface DeliveryEvent {
+  resultado: DeliveryResult;
+  codigoNovedad: string | null;
+  motivo: string | null;
+  latitud: number | null;
+  longitud: number | null;
+  fechaEvento: string;
+  idEventoCliente: string;
+}
+
+export interface DeliveryResultResponse {
+  idEventoCliente: string;
+  pedidoId: number;
+  resultado: DeliveryResult;
+  estado: "APLICADO" | "DUPLICADO";
+  fechaEvento: string;
+  duplicado: boolean;
+}
+
+export interface OfflineDeliveryEvent {
+  pedidoId: number;
+  evento: DeliveryEvent;
+  queuedAt: string;
+}
+
+export interface SyncResult {
+  idEventoCliente: string;
+  estado: "APLICADO" | "DUPLICADO" | "RECHAZADO";
+  motivoRechazo: string | null;
+}
+
+export interface SyncResponse {
+  resultados: SyncResult[];
+}

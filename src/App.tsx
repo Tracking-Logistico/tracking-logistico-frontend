@@ -15,6 +15,7 @@ import { SettingsPage } from "./pages/SettingsPage";
 import { OrdersPage } from "./pages/OrdersPage";
 import { ShipmentsPage } from "./pages/ShipmentsPage";
 import { RoutesPage } from "./pages/RoutesPage";
+import { DriverDashboard } from "./features/driver/components/DriverDashboard";
 
 import { Toaster } from "@/components/ui/sonner";
 
@@ -58,13 +59,18 @@ export default function App() {
             <Route
               element={<ProtectedRoute roles={["OPERADOR", "CONDUCTOR"]} />}
             >
-              <Route path="/panel/rutas" element={<RoutesPage />} />
+              <Route path="/panel/rutas" element={<RoleRoutesPage />} />
             </Route>
           </Route>
         </Route>
       </Routes>
     </div>
   );
+}
+
+function RoleRoutesPage() {
+  const role = useAuthStore((state) => state.role);
+  return role === "CONDUCTOR" ? <DriverDashboard /> : <RoutesPage />;
 }
 
 function PublicLayout() {

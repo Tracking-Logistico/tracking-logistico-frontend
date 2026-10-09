@@ -1,4 +1,4 @@
-import type { ApiErrorShape, ClientResponse, DriverResponse, LabelResponse, LoginResponse, OrderResponse, OrderEvent, ReceiveOrderPayload, RegisterPayload, RouteResponse, RouteNotification, AssignmentEvent, UserResponse, ValidateOrderPayload } from "@/types/api";
+import type { ApiErrorShape, ClientResponse, DriverResponse, LabelResponse, LoginResponse, OrderResponse, OrderEvent, ReceiveOrderPayload, RegisterPayload, RouteResponse, RouteNotification, AssignmentEvent, UserResponse, ValidateOrderPayload, DriverProgress, DriverDelivery, DriverDeliveryDetail, NextStop, DriverRoute, NoveltyOption, DeliveryEvent, DeliveryResultResponse, OfflineDeliveryEvent, SyncResponse } from "@/types/api";
 
 const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:8080/api/v1").replace(/\/$/, "");
 
@@ -59,7 +59,7 @@ async function request<T>(path: string, init: RequestInit = {}, token?: string, 
       headers.set("Authorization", `Bearer ${replacement}`);
       response = await fetch(`${API_URL}${path}`, { ...init, headers });
     } catch {
-
+      // Preserve the original response so callers receive its HTTP status.
     }
   }
   return parseResponse<T>(response);
@@ -103,6 +103,15 @@ export const api = {
   routeAssignmentHistory: (pedidoId: number, token: string) => request<AssignmentEvent[]>(`/rutas/asignaciones/${pedidoId}/historial`, {}, token),
   reorderRoute: (routeId: number, pedidoIdsEnOrden: number[], token: string) => request<RouteResponse>(`/rutas/${routeId}/orden`, { method: "PUT", body: JSON.stringify({ pedidoIdsEnOrden }) }, token),
   reassignRouteOrder: (pedidoId: number, nuevoConductorId: number, motivo: string, token: string) => request<RouteResponse>("/rutas/asignaciones/reasignar", { method: "PUT", body: JSON.stringify({ pedidoId, nuevoConductorId, motivo }) }, token),
+
+  driverProgress: (token: string) => request<DriverProgress>("/conductor/panel/progreso", {}, token),
+  driverDeliveries: (token: string) => request<DriverDelivery[]>("/conductor/panel/entregas", {}, token),
+  driverDeliveryDetail: (pedidoId: number, token: string) => request<DriverDeliveryDetail>(`/conductor/panel/entregas/${pedidoId}`, {}, token),
+  driverNextStop: (token: string) => request<NextStop>("/conductor/panel/siguiente", {}, token),
+  driverRoute: (token: string) => request<DriverRoute>("/conductor/panel/ruta", {}, token),
+  driverNoveltyCatalog: (token: string) => request<NoveltyOption[]>("/conductor/panel/catalogo-novedades", {}, token),
+  registerDriverDelivery: (pedidoId: number, evento: DeliveryEvent, token: string) => request<DeliveryResultResponse>(`/conductor/panel/entregas/${pedidoId}/resultado`, { method: "POST", body: JSON.stringify(evento) }, token),
+  syncDriverDeliveries: (events: OfflineDeliveryEvent[], token: string) => request<SyncResponse>("/conductor/panel/entregas/sincronizacion", { method: "POST", body: JSON.stringify({ eventos: events.map(({ pedidoId, evento }) => ({ pedidoId, evento })) }) }, token),
 
   adminUsers: (dbaKey: string) => request<UserResponse[]>("/admin/usuarios", {}, undefined, { "X-DBA-Key": dbaKey }),
   adminChangeRole: (id: number, body: { rol: "CLIENTE" | "OPERADOR" | "CONDUCTOR"; licencia?: string; codigoEmpleado?: string }, dbaKey: string) => request<UserResponse>(`/admin/usuarios/${id}/rol`, { method: "PATCH", body: JSON.stringify(body) }, undefined, { "X-DBA-Key": dbaKey }),
